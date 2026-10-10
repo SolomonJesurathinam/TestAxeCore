@@ -1,0 +1,23 @@
+# Place this workflow file inside your DEV REPOSITORY:
+# Path: .github/workflows/trigger-accessibility-tests.yml
+#
+# When code is committed/pushed to the dev repo, this workflow notifies
+# the TestAxeCore repository to run the accessibility test suite and generate reports!
+
+name: Trigger Accessibility Tests in TestAxeCore
+
+on:
+  push:
+    branches: [ main, dev ]
+
+jobs:
+  trigger-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Repository Dispatch Event to TestAxeCore
+        run: |
+          curl -X POST \
+            -H "Accept: application/vnd.github.v3+json" \
+            -H "Authorization: token ${{ secrets.GH_PAT_FOR_TEST_REPO }}" \
+            https://api.github.com/repos/SolomonJesurathinam/TestAxeCore/dispatches \
+            -d '{"event_type": "dev-commit", "client_payload": { "commit": "${{ github.sha }}", "actor": "${{ github.actor }}" }}'
