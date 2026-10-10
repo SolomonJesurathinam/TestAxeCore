@@ -1,0 +1,9 @@
+{
+  "name": "dummy-dev-app",
+  "version": "1.0.0",
+  "description": "Dummy development app that triggers accessibility tests in TestAxeCore upon commit",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js"
+  }
+}

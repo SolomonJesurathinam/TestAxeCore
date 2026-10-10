@@ -1,0 +1,20 @@
+name: Trigger Accessibility Tests on TestAxeCore
+
+on:
+  push:
+    branches: [ main, dev ]
+  pull_request:
+    branches: [ main, dev ]
+
+jobs:
+  notify-test-repo:
+    name: Dispatch Trigger to TestAxeCore
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Repository Dispatch Event
+        run: |
+          curl -X POST \
+            -H "Accept: application/vnd.github.v3+json" \
+            -H "Authorization: token ${{ secrets.GH_PAT_FOR_TEST_REPO }}" \
+            https://api.github.com/repos/SolomonJesurathinam/TestAxeCore/dispatches \
+            -d '{"event_type": "dev-commit", "client_payload": { "commit": "${{ github.sha }}", "actor": "${{ github.actor }}", "branch": "${{ github.ref_name }}" }}'
