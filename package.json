@@ -1,0 +1,24 @@
+{
+  "name": "acccessitesting",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "playwright test --headed --project=chromium",
+    "test:ui": "playwright test --ui",
+    "test:headed": "playwright test --headed --project=chromium",
+    "test:chromium": "playwright test --project=chromium",
+    "test:report": "playwright show-report",
+    "report:a11y": "node generate-report.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
+    "@playwright/test": "^1.64.0",
+    "@types/node": "^26.6.5",
+    "axe-core": "^4.14.0"
+  }
+}

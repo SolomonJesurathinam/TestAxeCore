@@ -1,0 +1,2386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Accessibility Audit Report - Deque axe-core & WCAG</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script>
+    window.toggleCard = function(el) {
+      const card = el ? el.closest('.violation-card') : null;
+      if (card) card.classList.toggle('open');
+    };
+
+    window.toggleAllCards = function() {
+      const cards = document.querySelectorAll('.violation-card');
+      const someClosed = Array.from(cards).some(c => !c.classList.contains('open'));
+      cards.forEach(c => {
+        if (someClosed) c.classList.add('open');
+        else c.classList.remove('open');
+      });
+    };
+
+    window.openLightbox = function(src) {
+      const modal = document.getElementById('lightboxModal');
+      const img = document.getElementById('lightboxImg');
+      if (modal && img) {
+        img.src = src;
+        modal.classList.add('active');
+      }
+    };
+
+    window.closeLightbox = function() {
+      const modal = document.getElementById('lightboxModal');
+      if (modal) modal.classList.remove('active');
+    };
+
+    document.addEventListener('DOMContentLoaded', () => {
+      document.addEventListener('click', function(e) {
+        if (e.target.closest('a, button, .docs-btn, .help-link, .screenshot-img-wrap, .lightbox-modal')) {
+          return;
+        }
+        const cardTop = e.target.closest('.card-top');
+        if (cardTop) {
+          window.toggleCard(cardTop);
+        }
+      });
+    });
+  </script>
+  <style>
+    :root {
+      --bg-app: #f8fafc;
+      --bg-card: #ffffff;
+      --bg-card-subtle: #f1f5f9;
+      --border-color: #e2e8f0;
+      --border-darker: #cbd5e1;
+      
+      --text-heading: #0f172a;
+      --text-body: #334155;
+      --text-muted: #64748b;
+      --text-light: #94a3b8;
+      
+      --primary: #4f46e5;
+      --primary-hover: #4338ca;
+      --primary-bg: #eef2ff;
+      --primary-border: #c7d2fe;
+
+      --critical: #dc2626;
+      --critical-bg: #fef2f2;
+      --critical-border: #fecaca;
+      
+      --serious: #ea580c;
+      --serious-bg: #fff7ed;
+      --serious-border: #ffedd5;
+      
+      --moderate: #d97706;
+      --moderate-bg: #fffbeb;
+      --moderate-border: #fef3c7;
+      
+      --minor: #2563eb;
+      --minor-bg: #eff6ff;
+      --minor-border: #dbeafe;
+      
+      --pass: #16a34a;
+      --pass-bg: #f0fdf4;
+      --pass-border: #bbf7d0;
+
+      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+      --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.07), 0 4px 6px -4px rgb(0 0 0 / 0.05);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--bg-app);
+      color: var(--text-body);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Top Navigation Bar */
+    .top-nav {
+      background: #ffffff;
+      border-bottom: 1px solid var(--border-color);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .nav-inner {
+      max-width: 1320px;
+      margin: 0 auto;
+      padding: 14px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .brand-wrap {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-logo {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+      color: #ffffff;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 1.15rem;
+      box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3);
+    }
+
+    .brand-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text-heading);
+    }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      border: 1px solid transparent;
+    }
+
+    .btn-csv {
+      background: #16a34a;
+      color: #ffffff;
+      box-shadow: 0 2px 4px rgba(22, 163, 74, 0.2);
+    }
+
+    .btn-csv:hover {
+      background: #15803d;
+      transform: translateY(-1px);
+    }
+
+    .btn-print {
+      background: #ffffff;
+      border-color: var(--border-darker);
+      color: var(--text-heading);
+    }
+
+    .btn-print:hover {
+      background: var(--bg-card-subtle);
+    }
+
+    /* Main Container */
+    .container {
+      max-width: 1320px;
+      margin: 0 auto;
+      padding: 32px 24px 80px;
+    }
+
+    /* Hero Overview Card */
+    .hero-card {
+      background: #ffffff;
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 28px 32px;
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 28px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 24px;
+    }
+
+    .hero-info h1 {
+      font-size: 1.75rem;
+      font-weight: 800;
+      color: var(--text-heading);
+      letter-spacing: -0.02em;
+      margin-bottom: 8px;
+    }
+
+    .hero-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      font-size: 0.875rem;
+      color: var(--text-muted);
+    }
+
+    .meta-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .meta-tag svg {
+      width: 16px;
+      height: 16px;
+      color: var(--text-light);
+    }
+
+    .dedup-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: #f0fdf4;
+      border: 1px solid var(--pass-border);
+      color: #15803d;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+
+    /* KPI Metrics Grid */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      margin-bottom: 32px;
+    }
+
+    .kpi-card {
+      background: #ffffff;
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 22px 24px;
+      box-shadow: var(--shadow-sm);
+      transition: all 0.2s ease;
+      position: relative;
+    }
+
+    .kpi-card:hover {
+      box-shadow: var(--shadow-md);
+      transform: translateY(-2px);
+    }
+
+    .kpi-card.border-critical { border-left: 4px solid var(--critical); }
+    .kpi-card.border-pass { border-left: 4px solid var(--pass); }
+    .kpi-card.border-primary { border-left: 4px solid var(--primary); }
+    .kpi-card.border-info { border-left: 4px solid #0284c7; }
+
+    .kpi-label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .kpi-num {
+      font-size: 2.25rem;
+      font-weight: 800;
+      color: var(--text-heading);
+      line-height: 1.1;
+      margin-bottom: 6px;
+    }
+
+    .kpi-desc {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .impact-badges {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+
+    .badge-pill {
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 6px;
+    }
+
+    .badge-pill.critical { background: var(--critical-bg); color: var(--critical); border: 1px solid var(--critical-border); }
+    .badge-pill.serious { background: var(--serious-bg); color: var(--serious); border: 1px solid var(--serious-border); }
+    .badge-pill.moderate { background: var(--moderate-bg); color: var(--moderate); border: 1px solid var(--moderate-border); }
+    .badge-pill.minor { background: var(--minor-bg); color: var(--minor); border: 1px solid var(--minor-border); }
+
+    /* Filter Toolbar */
+    .filter-bar {
+      background: #ffffff;
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 16px 20px;
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .tab-pills {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .tab-btn {
+      background: #ffffff;
+      color: var(--text-body);
+      border: 1px solid var(--border-color);
+      padding: 7px 14px;
+      border-radius: 8px;
+      font-size: 0.825rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .tab-btn:hover {
+      background: var(--bg-card-subtle);
+      border-color: var(--border-darker);
+    }
+
+    .tab-btn.active {
+      background: var(--primary);
+      color: #ffffff;
+      border-color: var(--primary);
+      box-shadow: 0 2px 6px rgba(79, 70, 229, 0.25);
+    }
+
+    .search-input-wrap {
+      position: relative;
+      min-width: 260px;
+    }
+
+    .search-input {
+      width: 100%;
+      background: #ffffff;
+      border: 1px solid var(--border-color);
+      padding: 8px 14px 8px 36px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      color: var(--text-heading);
+      outline: none;
+      transition: border-color 0.15s ease;
+    }
+
+    .search-input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 15px;
+      height: 15px;
+      color: var(--text-light);
+      pointer-events: none;
+    }
+
+    .select-scan {
+      background: #ffffff;
+      border: 1px solid var(--border-color);
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      color: var(--text-heading);
+      outline: none;
+      cursor: pointer;
+    }
+
+    /* Section Styling */
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 32px 0 16px;
+    }
+
+    .section-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--text-heading);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .count-badge {
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 2px 10px;
+      border-radius: 999px;
+      background: var(--bg-card-subtle);
+      color: var(--text-muted);
+    }
+
+    /* Cards Stack */
+    .cards-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .violation-card {
+      background: #ffffff;
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      box-shadow: var(--shadow-sm);
+      overflow: hidden;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .violation-card:hover {
+      border-color: var(--border-darker);
+      box-shadow: var(--shadow-md);
+    }
+
+    .violation-card.hidden {
+      display: none !important;
+    }
+
+    .card-top {
+      padding: 18px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .rule-title-line {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 6px;
+    }
+
+    .impact-chip {
+      font-size: 0.72rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 3px 10px;
+      border-radius: 6px;
+    }
+
+    .impact-chip.critical { background: var(--critical-bg); color: var(--critical); border: 1px solid var(--critical-border); }
+    .impact-chip.serious { background: var(--serious-bg); color: var(--serious); border: 1px solid var(--serious-border); }
+    .impact-chip.moderate { background: var(--moderate-bg); color: var(--moderate); border: 1px solid var(--moderate-border); }
+    .impact-chip.minor { background: var(--minor-bg); color: var(--minor); border: 1px solid var(--minor-border); }
+
+    .rule-code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text-heading);
+    }
+
+    .elem-count-pill {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      background: var(--bg-card-subtle);
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-weight: 600;
+    }
+
+    .scan-pill {
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 6px;
+      background: var(--primary-bg);
+      border: 1px solid var(--primary-border);
+      color: var(--primary);
+    }
+
+    .rule-headline {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-heading);
+      margin-bottom: 4px;
+    }
+
+    .rule-desc {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+    }
+
+    .tags-row {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .wcag-chip {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      padding: 2px 7px;
+      border-radius: 4px;
+      background: var(--bg-card-subtle);
+      color: var(--text-body);
+      border: 1px solid var(--border-color);
+    }
+
+    .card-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .docs-btn {
+      color: var(--primary);
+      text-decoration: none;
+      font-size: 0.8rem;
+      font-weight: 600;
+      padding: 6px 12px;
+      border-radius: 6px;
+      background: var(--primary-bg);
+      transition: background 0.15s ease;
+      white-space: nowrap;
+    }
+
+    .docs-btn:hover {
+      background: #e0e7ff;
+    }
+
+    .arrow-icon {
+      width: 18px;
+      height: 18px;
+      color: var(--text-light);
+      transition: transform 0.2s ease;
+    }
+
+    .violation-card.open .arrow-icon {
+      transform: rotate(180deg);
+    }
+
+    .card-details {
+      display: none;
+      padding: 0 24px 24px;
+      border-top: 1px solid var(--border-color);
+      background: #fbfcfe;
+    }
+
+    .violation-card.open .card-details {
+      display: block;
+    }
+
+    /* Node Details Block */
+    .node-item {
+      margin-top: 16px;
+      background: #ffffff;
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 16px 18px;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+    }
+
+    .node-top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .selector-code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.82rem;
+      color: #9333ea;
+      background: #faf5ff;
+      border: 1px solid #f3e8ff;
+      padding: 3px 8px;
+      border-radius: 6px;
+      word-break: break-all;
+    }
+
+    .dedup-tag {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #15803d;
+      background: #f0fdf4;
+      border: 1px solid var(--pass-border);
+      padding: 2px 8px;
+      border-radius: 6px;
+    }
+
+    .html-box {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.82rem;
+      background: #0f172a;
+      color: #f1f5f9;
+      padding: 12px 14px;
+      border-radius: 8px;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+      margin-bottom: 12px;
+    }
+
+    .remediation-box {
+      font-size: 0.825rem;
+      color: #991b1b;
+      background: #fef2f2;
+      border-left: 3px solid var(--critical);
+      padding: 10px 14px;
+      border-radius: 0 8px 8px 0;
+      line-height: 1.5;
+    }
+
+    /* Pass Cards */
+    .pass-row {
+      background: #ffffff;
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 16px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      box-shadow: var(--shadow-sm);
+      transition: all 0.15s ease;
+    }
+
+    .pass-row:hover {
+      border-color: var(--pass-border);
+    }
+
+    .pass-badge {
+      font-size: 0.72rem;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: var(--pass-bg);
+      color: var(--pass);
+      border: 1px solid var(--pass-border);
+    }
+
+    /* Screenshot Visual Styles */
+    .screenshot-card {
+      margin-top: 14px;
+      border: 1px solid var(--border-color);
+      background: #f8fafc;
+      border-radius: 10px;
+      padding: 14px;
+    }
+
+    .screenshot-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      font-size: 0.825rem;
+      font-weight: 700;
+      color: var(--text-heading);
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .screenshot-highlight-tag {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #dc2626;
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      padding: 2px 8px;
+      border-radius: 4px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .screenshot-img-wrap {
+      display: inline-block;
+      max-width: 100%;
+      cursor: zoom-in;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border-color);
+      box-shadow: var(--shadow-sm);
+      transition: all 0.2s ease;
+      background: #ffffff;
+    }
+
+    .screenshot-img-wrap:hover {
+      box-shadow: var(--shadow-md);
+      border-color: var(--primary);
+    }
+
+    .screenshot-img {
+      display: block;
+      max-width: 100%;
+      max-height: 280px;
+      object-fit: contain;
+    }
+
+    /* Lightbox Modal */
+    .lightbox-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(4px);
+      z-index: 9999;
+      justify-content: center;
+      align-items: center;
+      padding: 30px;
+    }
+
+    .lightbox-modal.active {
+      display: flex;
+    }
+
+    .lightbox-content {
+      max-width: 90vw;
+      max-height: 90vh;
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 12px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+      position: relative;
+    }
+
+    .lightbox-img {
+      max-width: 100%;
+      max-height: 82vh;
+      display: block;
+      border-radius: 8px;
+    }
+
+    .lightbox-close {
+      position: absolute;
+      top: -14px;
+      right: -14px;
+      width: 32px;
+      height: 32px;
+      background: #ffffff;
+      border: 1px solid var(--border-darker);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-weight: 800;
+      font-size: 16px;
+      color: #0f172a;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.15);
+    }
+
+    @media print {
+      .top-nav, .filter-bar, .btn { display: none !important; }
+      body { background: #ffffff !important; }
+      .violation-card { break-inside: avoid; border: 1px solid #ccc !important; }
+      .card-details { display: block !important; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Top Navigation -->
+  <nav class="top-nav">
+    <div class="nav-inner">
+      <div class="brand-wrap">
+        <div class="brand-logo">A11y</div>
+        <div>
+          <div class="brand-title">Accessibility Compliance Dashboard</div>
+        </div>
+      </div>
+
+      <div class="nav-actions">
+        <!-- Direct CSV Download Button -->
+        <a id="downloadCsvBtn" class="btn btn-csv" download="accessibility-report.csv" href="data:text/csv;base64,IlR5cGUiLCJSdWxlIElEIiwiSW1wYWN0IiwiUnVsZSBIZWxwIiwiRGVzY3JpcHRpb24iLCJXQ0FHIFRhZ3MiLCJGb3VuZCBJbiBTY2FucyIsIk9jY3VycmVuY2VzIChQcmUtRGVkdXApIiwiVGFyZ2V0IFNlbGVjdG9yIiwiSFRNTCBTbmlwcGV0IiwiRmFpbHVyZSBTdW1tYXJ5IiwiU2NyZWVuc2hvdCBGaWxlIiwiSGVscCBVUkwiDQoiVmlvbGF0aW9uIiwiY29sb3ItY29udHJhc3QiLCJzZXJpb3VzIiwiRWxlbWVudHMgbXVzdCBtZWV0IG1pbmltdW0gY29sb3IgY29udHJhc3QgcmF0aW8gdGhyZXNob2xkcyIsIkVuc3VyZSB0aGUgY29udHJhc3QgYmV0d2VlbiBmb3JlZ3JvdW5kIGFuZCBiYWNrZ3JvdW5kIGNvbG9ycyBtZWV0cyBXQ0FHIDIgQUEgbWluaW11bSBjb250cmFzdCByYXRpbyB0aHJlc2hvbGRzIiwiY2F0LmNvbG9yOyB3Y2FnMmFhOyB3Y2FnMTQzOyBUVHY1OyBUVDEzLmM7IEVOLTMwMS01NDk7IEVOLTkuMS40LjM7IEFDVDsgUkdBQXY0OyBSR0FBLTMuMi4xIiwiU2NhbiAxIChNYWluIFBhZ2UpIiwiMSIsImRpdltkYXRhLXRlc3RpZD0iImNob2NvbGF0ZS1jYWtlIiJdID4gLlJlY2lwZXNfX2NhcmQtY29udGVudCA+IHRhYmxlID4gdGJvZHkgPiB0cjpudGgtY2hpbGQoMykgPiAuQmVnaW5uZXIiLCI8dGQgY2xhc3M9IiJCZWdpbm5lciIiPkJlZ2lubmVyPC90ZD4iLCJGaXggYW55IG9mIHRoZSBmb2xsb3dpbmc6ICAgRWxlbWVudCBoYXMgaW5zdWZmaWNpZW50IGNvbG9yIGNvbnRyYXN0IG9mIDIuMTcgKGZvcmVncm91bmQgY29sb3I6ICM3NmJmOTgsIGJhY2tncm91bmQgY29sb3I6ICNmZmZmZmYsIGZvbnQgc2l6ZTogMTMuNXB0ICgxOHB4KSwgZm9udCB3ZWlnaHQ6IG5vcm1hbCkuIEV4cGVjdGVkIGNvbnRyYXN0IHJhdGlvIG9mIDQuNToxIiwic2NyZWVuc2hvdHMvc2Nhbi0xLW1haW4tcGFnZS1jb2xvci1jb250cmFzdC1ub2RlMS5wbmciLCJodHRwczovL2RlcXVldW5pdmVyc2l0eS5jb20vcnVsZXMvYXhlLzQuMTMvY29sb3ItY29udHJhc3Q/YXBwbGljYXRpb249cGxheXdyaWdodCINCiJWaW9sYXRpb24iLCJjb2xvci1jb250cmFzdCIsInNlcmlvdXMiLCJFbGVtZW50cyBtdXN0IG1lZXQgbWluaW11bSBjb2xvciBjb250cmFzdCByYXRpbyB0aHJlc2hvbGRzIiwiRW5zdXJlIHRoZSBjb250cmFzdCBiZXR3ZWVuIGZvcmVncm91bmQgYW5kIGJhY2tncm91bmQgY29sb3JzIG1lZXRzIFdDQUcgMiBBQSBtaW5pbXVtIGNvbnRyYXN0IHJhdGlvIHRocmVzaG9sZHMiLCJjYXQuY29sb3I7IHdjYWcyYWE7IHdjYWcxNDM7IFRUdjU7IFRUMTMuYzsgRU4tMzAxLTU0OTsgRU4tOS4xLjQuMzsgQUNUOyBSR0FBdjQ7IFJHQUEtMy4yLjEiLCJTY2FuIDEgKE1haW4gUGFnZSkiLCIxIiwiZGl2W2RhdGEtdGVzdGlkPSIibW9tcy1zcGFnaGV0dGkiIl0gPiAuUmVjaXBlc19fY2FyZC1jb250ZW50ID4gdGFibGUgPiB0Ym9keSA+IHRyOm50aC1jaGlsZCgzKSA+IC5CZWdpbm5lciIsIjx0ZCBjbGFzcz0iIkJlZ2lubmVyIiI+QmVnaW5uZXI8L3RkPiIsIkZpeCBhbnkgb2YgdGhlIGZvbGxvd2luZzogICBFbGVtZW50IGhhcyBpbnN1ZmZpY2llbnQgY29sb3IgY29udHJhc3Qgb2YgMi4xNyAoZm9yZWdyb3VuZCBjb2xvcjogIzc2YmY5OCwgYmFja2dyb3VuZCBjb2xvcjogI2ZmZmZmZiwgZm9udCBzaXplOiAxMy41cHQgKDE4cHgpLCBmb250IHdlaWdodDogbm9ybWFsKS4gRXhwZWN0ZWQgY29udHJhc3QgcmF0aW8gb2YgNC41OjEiLCJzY3JlZW5zaG90cy9zY2FuLTEtbWFpbi1wYWdlLWNvbG9yLWNvbnRyYXN0LW5vZGUyLnBuZyIsImh0dHBzOi8vZGVxdWV1bml2ZXJzaXR5LmNvbS9ydWxlcy9heGUvNC4xMy9jb2xvci1jb250cmFzdD9hcHBsaWNhdGlvbj1wbGF5d3JpZ2h0Ig0KIlZpb2xhdGlvbiIsImNvbG9yLWNvbnRyYXN0Iiwic2VyaW91cyIsIkVsZW1lbnRzIG11c3QgbWVldCBtaW5pbXVtIGNvbG9yIGNvbnRyYXN0IHJhdGlvIHRocmVzaG9sZHMiLCJFbnN1cmUgdGhlIGNvbnRyYXN0IGJldHdlZW4gZm9yZWdyb3VuZCBhbmQgYmFja2dyb3VuZCBjb2xvcnMgbWVldHMgV0NBRyAyIEFBIG1pbmltdW0gY29udHJhc3QgcmF0aW8gdGhyZXNob2xkcyIsImNhdC5jb2xvcjsgd2NhZzJhYTsgd2NhZzE0MzsgVFR2NTsgVFQxMy5jOyBFTi0zMDEtNTQ5OyBFTi05LjEuNC4zOyBBQ1Q7IFJHQUF2NDsgUkdBQS0zLjIuMSIsIlNjYW4gMiAoRWRpdCBNb2RhbCksIFNjYW4gMyAoVmlldyBNb2RhbCkiLCIyIiwiZGl2W2RhdGEtdGVzdGlkPSIiY2hvY29sYXRlLWNha2UiIl0gPiAuUmVjaXBlc19fY2FyZC1jb250ZW50ID4gdGFibGUgPiB0Ym9keSA+IHRyOm50aC1jaGlsZCgzKSA+IC5CZWdpbm5lciIsIjx0ZCBjbGFzcz0iIkJlZ2lubmVyIiIgc3R5bGU9IiJvdXRsaW5lLW9mZnNldDogM3B4ICFpbXBvcnRhbnQ7IiI+QmVnaW5uZXI8L3RkPiIsIkZpeCBhbnkgb2YgdGhlIGZvbGxvd2luZzogICBFbGVtZW50IGhhcyBpbnN1ZmZpY2llbnQgY29sb3IgY29udHJhc3Qgb2YgMi4xNyAoZm9yZWdyb3VuZCBjb2xvcjogIzc2YmY5OCwgYmFja2dyb3VuZCBjb2xvcjogI2ZmZmZmZiwgZm9udCBzaXplOiAxMy41cHQgKDE4cHgpLCBmb250IHdlaWdodDogbm9ybWFsKS4gRXhwZWN0ZWQgY29udHJhc3QgcmF0aW8gb2YgNC41OjEiLCJzY3JlZW5zaG90cy9zY2FuLTItZWRpdC1tb2RhbC1jb2xvci1jb250cmFzdC1ub2RlMS5wbmciLCJodHRwczovL2RlcXVldW5pdmVyc2l0eS5jb20vcnVsZXMvYXhlLzQuMTMvY29sb3ItY29udHJhc3Q/YXBwbGljYXRpb249cGxheXdyaWdodCINCiJWaW9sYXRpb24iLCJjb2xvci1jb250cmFzdCIsInNlcmlvdXMiLCJFbGVtZW50cyBtdXN0IG1lZXQgbWluaW11bSBjb2xvciBjb250cmFzdCByYXRpbyB0aHJlc2hvbGRzIiwiRW5zdXJlIHRoZSBjb250cmFzdCBiZXR3ZWVuIGZvcmVncm91bmQgYW5kIGJhY2tncm91bmQgY29sb3JzIG1lZXRzIFdDQUcgMiBBQSBtaW5pbXVtIGNvbnRyYXN0IHJhdGlvIHRocmVzaG9sZHMiLCJjYXQuY29sb3I7IHdjYWcyYWE7IHdjYWcxNDM7IFRUdjU7IFRUMTMuYzsgRU4tMzAxLTU0OTsgRU4tOS4xLjQuMzsgQUNUOyBSR0FBdjQ7IFJHQUEtMy4yLjEiLCJTY2FuIDIgKEVkaXQgTW9kYWwpLCBTY2FuIDMgKFZpZXcgTW9kYWwpIiwiMiIsImRpdltkYXRhLXRlc3RpZD0iIm1vbXMtc3BhZ2hldHRpIiJdID4gLlJlY2lwZXNfX2NhcmQtY29udGVudCA+IHRhYmxlID4gdGJvZHkgPiB0cjpudGgtY2hpbGQoMykgPiAuQmVnaW5uZXIiLCI8dGQgY2xhc3M9IiJCZWdpbm5lciIiIHN0eWxlPSIib3V0bGluZS1vZmZzZXQ6IDNweCAhaW1wb3J0YW50OyIiPkJlZ2lubmVyPC90ZD4iLCJGaXggYW55IG9mIHRoZSBmb2xsb3dpbmc6ICAgRWxlbWVudCBoYXMgaW5zdWZmaWNpZW50IGNvbG9yIGNvbnRyYXN0IG9mIDIuMTcgKGZvcmVncm91bmQgY29sb3I6ICM3NmJmOTgsIGJhY2tncm91bmQgY29sb3I6ICNmZmZmZmYsIGZvbnQgc2l6ZTogMTMuNXB0ICgxOHB4KSwgZm9udCB3ZWlnaHQ6IG5vcm1hbCkuIEV4cGVjdGVkIGNvbnRyYXN0IHJhdGlvIG9mIDQuNToxIiwic2NyZWVuc2hvdHMvc2Nhbi0yLWVkaXQtbW9kYWwtY29sb3ItY29udHJhc3Qtbm9kZTIucG5nIiwiaHR0cHM6Ly9kZXF1ZXVuaXZlcnNpdHkuY29tL3J1bGVzL2F4ZS80LjEzL2NvbG9yLWNvbnRyYXN0P2FwcGxpY2F0aW9uPXBsYXl3cmlnaHQiDQoiVmlvbGF0aW9uIiwiaW1hZ2UtYWx0IiwiY3JpdGljYWwiLCJJbWFnZXMgbXVzdCBoYXZlIGFsdGVybmF0aXZlIHRleHQiLCJFbnN1cmUgPGltZz4gZWxlbWVudHMgaGF2ZSBhbHRlcm5hdGl2ZSB0ZXh0IG9yIGEgcm9sZSBvZiBub25lIG9yIHByZXNlbnRhdGlvbiIsImNhdC50ZXh0LWFsdGVybmF0aXZlczsgd2NhZzJhOyB3Y2FnMTExOyBzZWN0aW9uNTA4OyBzZWN0aW9uNTA4LjIyLmE7IFRUdjU7IFRUNy5hOyBUVDcuYjsgRU4tMzAxLTU0OTsgRU4tOS4xLjEuMTsgQUNUOyBSR0FBdjQ7IFJHQUEtMS4xLjEiLCJTY2FuIDEgKE1haW4gUGFnZSkiLCIxIiwiaW1nW3NyYyQ9IiJjYWtlLnBuZyIiXSIsIjxpbWcgc3JjPSIiL2Zvb2QvY2FrZS5wbmciIiBjbGFzcz0iIlJlY2lwZV9faW1hZ2UiIj4iLCJGaXggYW55IG9mIHRoZSBmb2xsb3dpbmc6ICAgRWxlbWVudCBkb2VzIG5vdCBoYXZlIGFuIGFsdCBhdHRyaWJ1dGUgICBhcmlhLWxhYmVsIGF0dHJpYnV0ZSBkb2VzIG5vdCBleGlzdCBvciBpcyBlbXB0eSAgIGFyaWEtbGFiZWxsZWRieSBhdHRyaWJ1dGUgZG9lcyBub3QgZXhpc3QsIHJlZmVyZW5jZXMgZWxlbWVudHMgdGhhdCBkbyBub3QgZXhpc3Qgb3IgcmVmZXJlbmNlcyBlbGVtZW50cyB0aGF0IGFyZSBlbXB0eSAgIEVsZW1lbnQgaGFzIG5vIHRpdGxlIGF0dHJpYnV0ZSAgIEVsZW1lbnQncyBkZWZhdWx0IHNlbWFudGljcyB3ZXJlIG5vdCBvdmVycmlkZGVuIHdpdGggcm9sZT0iIm5vbmUiIiBvciByb2xlPSIicHJlc2VudGF0aW9uIiIiLCJzY3JlZW5zaG90cy9zY2FuLTEtbWFpbi1wYWdlLWltYWdlLWFsdC1ub2RlMS5wbmciLCJodHRwczovL2RlcXVldW5pdmVyc2l0eS5jb20vcnVsZXMvYXhlLzQuMTMvaW1hZ2UtYWx0P2FwcGxpY2F0aW9uPXBsYXl3cmlnaHQiDQoiVmlvbGF0aW9uIiwiaW1hZ2UtYWx0IiwiY3JpdGljYWwiLCJJbWFnZXMgbXVzdCBoYXZlIGFsdGVybmF0aXZlIHRleHQiLCJFbnN1cmUgPGltZz4gZWxlbWVudHMgaGF2ZSBhbHRlcm5hdGl2ZSB0ZXh0IG9yIGEgcm9sZSBvZiBub25lIG9yIHByZXNlbnRhdGlvbiIsImNhdC50ZXh0LWFsdGVybmF0aXZlczsgd2NhZzJhOyB3Y2FnMTExOyBzZWN0aW9uNTA4OyBzZWN0aW9uNTA4LjIyLmE7IFRUdjU7IFRUNy5hOyBUVDcuYjsgRU4tMzAxLTU0OTsgRU4tOS4xLjEuMTsgQUNUOyBSR0FBdjQ7IFJHQUEtMS4xLjEiLCJTY2FuIDEgKE1haW4gUGFnZSkiLCIxIiwiaW1nW3NyYyQ9IiJzcGFnZXQucG5nIiJdIiwiPGltZyBzcmM9IiIvZm9vZC9zcGFnZXQucG5nIiIgY2xhc3M9IiJSZWNpcGVfX2ltYWdlIiI+IiwiRml4IGFueSBvZiB0aGUgZm9sbG93aW5nOiAgIEVsZW1lbnQgZG9lcyBub3QgaGF2ZSBhbiBhbHQgYXR0cmlidXRlICAgYXJpYS1sYWJlbCBhdHRyaWJ1dGUgZG9lcyBub3QgZXhpc3Qgb3IgaXMgZW1wdHkgICBhcmlhLWxhYmVsbGVkYnkgYXR0cmlidXRlIGRvZXMgbm90IGV4aXN0LCByZWZlcmVuY2VzIGVsZW1lbnRzIHRoYXQgZG8gbm90IGV4aXN0IG9yIHJlZmVyZW5jZXMgZWxlbWVudHMgdGhhdCBhcmUgZW1wdHkgICBFbGVtZW50IGhhcyBubyB0aXRsZSBhdHRyaWJ1dGUgICBFbGVtZW50J3MgZGVmYXVsdCBzZW1hbnRpY3Mgd2VyZSBub3Qgb3ZlcnJpZGRlbiB3aXRoIHJvbGU9IiJub25lIiIgb3Igcm9sZT0iInByZXNlbnRhdGlvbiIiIiwic2NyZWVuc2hvdHMvc2Nhbi0xLW1haW4tcGFnZS1pbWFnZS1hbHQtbm9kZTIucG5nIiwiaHR0cHM6Ly9kZXF1ZXVuaXZlcnNpdHkuY29tL3J1bGVzL2F4ZS80LjEzL2ltYWdlLWFsdD9hcHBsaWNhdGlvbj1wbGF5d3JpZ2h0Ig0KIlZpb2xhdGlvbiIsImltYWdlLWFsdCIsImNyaXRpY2FsIiwiSW1hZ2VzIG11c3QgaGF2ZSBhbHRlcm5hdGl2ZSB0ZXh0IiwiRW5zdXJlIDxpbWc+IGVsZW1lbnRzIGhhdmUgYWx0ZXJuYXRpdmUgdGV4dCBvciBhIHJvbGUgb2Ygbm9uZSBvciBwcmVzZW50YXRpb24iLCJjYXQudGV4dC1hbHRlcm5hdGl2ZXM7IHdjYWcyYTsgd2NhZzExMTsgc2VjdGlvbjUwODsgc2VjdGlvbjUwOC4yMi5hOyBUVHY1OyBUVDcuYTsgVFQ3LmI7IEVOLTMwMS01NDk7IEVOLTkuMS4xLjE7IEFDVDsgUkdBQXY0OyBSR0FBLTEuMS4xIiwiU2NhbiAxIChNYWluIFBhZ2UpIiwiMSIsImltZ1tzcmMkPSIic3RlYWsucG5nIiJdIiwiPGltZyBzcmM9IiIvZm9vZC9zdGVhay5wbmciIiBjbGFzcz0iIlJlY2lwZV9faW1hZ2UiIj4iLCJGaXggYW55IG9mIHRoZSBmb2xsb3dpbmc6ICAgRWxlbWVudCBkb2VzIG5vdCBoYXZlIGFuIGFsdCBhdHRyaWJ1dGUgICBhcmlhLWxhYmVsIGF0dHJpYnV0ZSBkb2VzIG5vdCBleGlzdCBvciBpcyBlbXB0eSAgIGFyaWEtbGFiZWxsZWRieSBhdHRyaWJ1dGUgZG9lcyBub3QgZXhpc3QsIHJlZmVyZW5jZXMgZWxlbWVudHMgdGhhdCBkbyBub3QgZXhpc3Qgb3IgcmVmZXJlbmNlcyBlbGVtZW50cyB0aGF0IGFyZSBlbXB0eSAgIEVsZW1lbnQgaGFzIG5vIHRpdGxlIGF0dHJpYnV0ZSAgIEVsZW1lbnQncyBkZWZhdWx0IHNlbWFudGljcyB3ZXJlIG5vdCBvdmVycmlkZGVuIHdpdGggcm9sZT0iIm5vbmUiIiBvciByb2xlPSIicHJlc2VudGF0aW9uIiIiLCJzY3JlZW5zaG90cy9zY2FuLTEtbWFpbi1wYWdlLWltYWdlLWFsdC1ub2RlMy5wbmciLCJodHRwczovL2RlcXVldW5pdmVyc2l0eS5jb20vcnVsZXMvYXhlLzQuMTMvaW1hZ2UtYWx0P2FwcGxpY2F0aW9uPXBsYXl3cmlnaHQiDQoiVmlvbGF0aW9uIiwiaW1hZ2UtYWx0IiwiY3JpdGljYWwiLCJJbWFnZXMgbXVzdCBoYXZlIGFsdGVybmF0aXZlIHRleHQiLCJFbnN1cmUgPGltZz4gZWxlbWVudHMgaGF2ZSBhbHRlcm5hdGl2ZSB0ZXh0IG9yIGEgcm9sZSBvZiBub25lIG9yIHByZXNlbnRhdGlvbiIsImNhdC50ZXh0LWFsdGVybmF0aXZlczsgd2NhZzJhOyB3Y2FnMTExOyBzZWN0aW9uNTA4OyBzZWN0aW9uNTA4LjIyLmE7IFRUdjU7IFRUNy5hOyBUVDcuYjsgRU4tMzAxLTU0OTsgRU4tOS4xLjEuMTsgQUNUOyBSR0FBdjQ7IFJHQUEtMS4xLjEiLCJTY2FuIDEgKE1haW4gUGFnZSkiLCIxIiwiaW1nW3NyYyQ9IiJidXJnZXIucG5nIiJdIiwiPGltZyBzcmM9IiIvZm9vZC9idXJnZXIucG5nIiIgY2xhc3M9IiJSZWNpcGVfX2ltYWdlIiI+IiwiRml4IGFueSBvZiB0aGUgZm9sbG93aW5nOiAgIEVsZW1lbnQgZG9lcyBub3QgaGF2ZSBhbiBhbHQgYXR0cmlidXRlICAgYXJpYS1sYWJlbCBhdHRyaWJ1dGUgZG9lcyBub3QgZXhpc3Qgb3IgaXMgZW1wdHkgICBhcmlhLWxhYmVsbGVkYnkgYXR0cmlidXRlIGRvZXMgbm90IGV4aXN0LCByZWZlcmVuY2VzIGVsZW1lbnRzIHRoYXQgZG8gbm90IGV4aXN0IG9yIHJlZmVyZW5jZXMgZWxlbWVudHMgdGhhdCBhcmUgZW1wdHkgICBFbGVtZW50IGhhcyBubyB0aXRsZSBhdHRyaWJ1dGUgICBFbGVtZW50J3MgZGVmYXVsdCBzZW1hbnRpY3Mgd2VyZSBub3Qgb3ZlcnJpZGRlbiB3aXRoIHJvbGU9IiJub25lIiIgb3Igcm9sZT0iInByZXNlbnRhdGlvbiIiIiwic2NyZWVuc2hvdHMvc2Nhbi0xLW1haW4tcGFnZS1pbWFnZS1hbHQtbm9kZTQucG5nIiwiaHR0cHM6Ly9kZXF1ZXVuaXZlcnNpdHkuY29tL3J1bGVzL2F4ZS80LjEzL2ltYWdlLWFsdD9hcHBsaWNhdGlvbj1wbGF5d3JpZ2h0Ig0KIlZpb2xhdGlvbiIsImltYWdlLWFsdCIsImNyaXRpY2FsIiwiSW1hZ2VzIG11c3QgaGF2ZSBhbHRlcm5hdGl2ZSB0ZXh0IiwiRW5zdXJlIDxpbWc+IGVsZW1lbnRzIGhhdmUgYWx0ZXJuYXRpdmUgdGV4dCBvciBhIHJvbGUgb2Ygbm9uZSBvciBwcmVzZW50YXRpb24iLCJjYXQudGV4dC1hbHRlcm5hdGl2ZXM7IHdjYWcyYTsgd2NhZzExMTsgc2VjdGlvbjUwODsgc2VjdGlvbjUwOC4yMi5hOyBUVHY1OyBUVDcuYTsgVFQ3LmI7IEVOLTMwMS01NDk7IEVOLTkuMS4xLjE7IEFDVDsgUkdBQXY0OyBSR0FBLTEuMS4xIiwiU2NhbiAxIChNYWluIFBhZ2UpIiwiMSIsImltZ1tzcmMkPSIiZ3JpbGxlZF9jaGVlc2UucG5nIiJdIiwiPGltZyBzcmM9IiIvZm9vZC9ncmlsbGVkX2NoZWVzZS5wbmciIiBjbGFzcz0iIlJlY2lwZV9faW1hZ2UiIj4iLCJGaXggYW55IG9mIHRoZSBmb2xsb3dpbmc6ICAgRWxlbWVudCBkb2VzIG5vdCBoYXZlIGFuIGFsdCBhdHRyaWJ1dGUgICBhcmlhLWxhYmVsIGF0dHJpYnV0ZSBkb2VzIG5vdCBleGlzdCBvciBpcyBlbXB0eSAgIGFyaWEtbGFiZWxsZWRieSBhdHRyaWJ1dGUgZG9lcyBub3QgZXhpc3QsIHJlZmVyZW5jZXMgZWxlbWVudHMgdGhhdCBkbyBub3QgZXhpc3Qgb3IgcmVmZXJlbmNlcyBlbGVtZW50cyB0aGF0IGFyZSBlbXB0eSAgIEVsZW1lbnQgaGFzIG5vIHRpdGxlIGF0dHJpYnV0ZSAgIEVsZW1lbnQncyBkZWZhdWx0IHNlbWFudGljcyB3ZXJlIG5vdCBvdmVycmlkZGVuIHdpdGggcm9sZT0iIm5vbmUiIiBvciByb2xlPSIicHJlc2VudGF0aW9uIiIiLCJzY3JlZW5zaG90cy9zY2FuLTEtbWFpbi1wYWdlLWltYWdlLWFsdC1ub2RlNS5wbmciLCJodHRwczovL2RlcXVldW5pdmVyc2l0eS5jb20vcnVsZXMvYXhlLzQuMTMvaW1hZ2UtYWx0P2FwcGxpY2F0aW9uPXBsYXl3cmlnaHQiDQoiVmlvbGF0aW9uIiwiaW1hZ2UtYWx0IiwiY3JpdGljYWwiLCJJbWFnZXMgbXVzdCBoYXZlIGFsdGVybmF0aXZlIHRleHQiLCJFbnN1cmUgPGltZz4gZWxlbWVudHMgaGF2ZSBhbHRlcm5hdGl2ZSB0ZXh0IG9yIGEgcm9sZSBvZiBub25lIG9yIHByZXNlbnRhdGlvbiIsImNhdC50ZXh0LWFsdGVybmF0aXZlczsgd2NhZzJhOyB3Y2FnMTExOyBzZWN0aW9uNTA4OyBzZWN0aW9uNTA4LjIyLmE7IFRUdjU7IFRUNy5hOyBUVDcuYjsgRU4tMzAxLTU0OTsgRU4tOS4xLjEuMTsgQUNUOyBSR0FBdjQ7IFJHQUEtMS4xLjEiLCJTY2FuIDEgKE1haW4gUGFnZSkiLCIxIiwiaW1nW3NyYyQ9IiJsZW1vbl9iYXIucG5nIiJdIiwiPGltZyBzcmM9IiIvZm9vZC9sZW1vbl9iYXIucG5nIiIgY2xhc3M9IiJSZWNpcGVfX2ltYWdlIiI+IiwiRml4IGFueSBvZiB0aGUgZm9sbG93aW5nOiAgIEVsZW1lbnQgZG9lcyBub3QgaGF2ZSBhbiBhbHQgYXR0cmlidXRlICAgYXJpYS1sYWJlbCBhdHRyaWJ1dGUgZG9lcyBub3QgZXhpc3Qgb3IgaXMgZW1wdHkgICBhcmlhLWxhYmVsbGVkYnkgYXR0cmlidXRlIGRvZXMgbm90IGV4aXN0LCByZWZlcmVuY2VzIGVsZW1lbnRzIHRoYXQgZG8gbm90IGV4aXN0IG9yIHJlZmVyZW5jZXMgZWxlbWVudHMgdGhhdCBhcmUgZW1wdHkgICBFbGVtZW50IGhhcyBubyB0aXRsZSBhdHRyaWJ1dGUgICBFbGVtZW50J3MgZGVmYXVsdCBzZW1hbnRpY3Mgd2VyZSBub3Qgb3ZlcnJpZGRlbiB3aXRoIHJvbGU9IiJub25lIiIgb3Igcm9sZT0iInByZXNlbnRhdGlvbiIiIiwic2NyZWVuc2hvdHMvc2Nhbi0xLW1haW4tcGFnZS1pbWFnZS1hbHQtbm9kZTYucG5nIiwiaHR0cHM6Ly9kZXF1ZXVuaXZlcnNpdHkuY29tL3J1bGVzL2F4ZS80LjEzL2ltYWdlLWFsdD9hcHBsaWNhdGlvbj1wbGF5d3JpZ2h0Ig0KIlZpb2xhdGlvbiIsImltYWdlLWFsdCIsImNyaXRpY2FsIiwiSW1hZ2VzIG11c3QgaGF2ZSBhbHRlcm5hdGl2ZSB0ZXh0IiwiRW5zdXJlIDxpbWc+IGVsZW1lbnRzIGhhdmUgYWx0ZXJuYXRpdmUgdGV4dCBvciBhIHJvbGUgb2Ygbm9uZSBvciBwcmVzZW50YXRpb24iLCJjYXQudGV4dC1hbHRlcm5hdGl2ZXM7IHdjYWcyYTsgd2NhZzExMTsgc2VjdGlvbjUwODsgc2VjdGlvbjUwOC4yMi5hOyBUVHY1OyBUVDcuYTsgVFQ3LmI7IEVOLTMwMS01NDk7IEVOLTkuMS4xLjE7IEFDVDsgUkdBQXY0OyBSR0FBLTEuMS4xIiwiU2NhbiAxIChNYWluIFBhZ2UpIiwiMSIsImltZ1tzcmMkPSIia2FsZV9zYWxhZC5wbmciIl0iLCI8aW1nIHNyYz0iIi9mb29kL2thbGVfc2FsYWQucG5nIiIgY2xhc3M9IiJSZWNpcGVfX2ltYWdlIiI+IiwiRml4IGFueSBvZiB0aGUgZm9sbG93aW5nOiAgIEVsZW1lbnQgZG9lcyBub3QgaGF2ZSBhbiBhbHQgYXR0cmlidXRlICAgYXJpYS1sYWJlbCBhdHRyaWJ1dGUgZG9lcyBub3QgZXhpc3Qgb3IgaXMgZW1wdHkgICBhcmlhLWxhYmVsbGVkYnkgYXR0cmlidXRlIGRvZXMgbm90IGV4aXN0LCByZWZlcmVuY2VzIGVsZW1lbnRzIHRoYXQgZG8gbm90IGV4aXN0IG9yIHJlZmVyZW5jZXMgZWxlbWVudHMgdGhhdCBhcmUgZW1wdHkgICBFbGVtZW50IGhhcyBubyB0aXRsZSBhdHRyaWJ1dGUgICBFbGVtZW50J3MgZGVmYXVsdCBzZW1hbnRpY3Mgd2VyZSBub3Qgb3ZlcnJpZGRlbiB3aXRoIHJvbGU9IiJub25lIiIgb3Igcm9sZT0iInByZXNlbnRhdGlvbiIiIiwic2NyZWVuc2hvdHMvc2Nhbi0xLW1haW4tcGFnZS1pbWFnZS1hbHQtbm9kZTcucG5nIiwiaHR0cHM6Ly9kZXF1ZXVuaXZlcnNpdHkuY29tL3J1bGVzL2F4ZS80LjEzL2ltYWdlLWFsdD9hcHBsaWNhdGlvbj1wbGF5d3JpZ2h0Ig0KIlZpb2xhdGlvbiIsImltYWdlLWFsdCIsImNyaXRpY2FsIiwiSW1hZ2VzIG11c3QgaGF2ZSBhbHRlcm5hdGl2ZSB0ZXh0IiwiRW5zdXJlIDxpbWc+IGVsZW1lbnRzIGhhdmUgYWx0ZXJuYXRpdmUgdGV4dCBvciBhIHJvbGUgb2Ygbm9uZSBvciBwcmVzZW50YXRpb24iLCJjYXQudGV4dC1hbHRlcm5hdGl2ZXM7IHdjYWcyYTsgd2NhZzExMTsgc2VjdGlvbjUwODsgc2VjdGlvbjUwOC4yMi5hOyBUVHY1OyBUVDcuYTsgVFQ3LmI7IEVOLTMwMS01NDk7IEVOLTkuMS4xLjE7IEFDVDsgUkdBQXY0OyBSR0FBLTEuMS4xIiwiU2NhbiAxIChNYWluIFBhZ2UpIiwiMSIsImltZ1tzcmMkPSIidHJhaWxfbWl4LnBuZyIiXSIsIjxpbWcgc3JjPSIiL2Zvb2QvdHJhaWxfbWl4LnBuZyIiIGNsYXNzPSIiUmVjaXBlX19pbWFnZSIiPiIsIkZpeCBhbnkgb2YgdGhlIGZvbGxvd2luZzogICBFbGVtZW50IGRvZXMgbm90IGhhdmUgYW4gYWx0IGF0dHJpYnV0ZSAgIGFyaWEtbGFiZWwgYXR0cmlidXRlIGRvZXMgbm90IGV4aXN0IG9yIGlzIGVtcHR5ICAgYXJpYS1sYWJlbGxlZGJ5IGF0dHJpYnV0ZSBkb2VzIG5vdCBleGlzdCwgcmVmZXJlbmNlcyBlbGVtZW50cyB0aGF0IGRvIG5vdCBleGlzdCBvciByZWZlcmVuY2VzIGVsZW1lbnRzIHRoYXQgYXJlIGVtcHR5ICAgRWxlbWVudCBoYXMgbm8gdGl0bGUgYXR0cmlidXRlICAgRWxlbWVudCdzIGRlZmF1bHQgc2VtYW50aWNzIHdlcmUgbm90IG92ZXJyaWRkZW4gd2l0aCByb2xlPSIibm9uZSIiIG9yIHJvbGU9IiJwcmVzZW50YXRpb24iIiIsInNjcmVlbnNob3RzL3NjYW4tMS1tYWluLXBhZ2UtaW1hZ2UtYWx0LW5vZGU4LnBuZyIsImh0dHBzOi8vZGVxdWV1bml2ZXJzaXR5LmNvbS9ydWxlcy9heGUvNC4xMy9pbWFnZS1hbHQ/YXBwbGljYXRpb249cGxheXdyaWdodCINCiJWaW9sYXRpb24iLCJhcmlhLWRpYWxvZy1uYW1lIiwic2VyaW91cyIsIkFSSUEgZGlhbG9nIGFuZCBhbGVydGRpYWxvZyBub2RlcyBzaG91bGQgaGF2ZSBhbiBhY2Nlc3NpYmxlIG5hbWUiLCJFbnN1cmUgZXZlcnkgQVJJQSBkaWFsb2cgYW5kIGFsZXJ0ZGlhbG9nIG5vZGUgaGFzIGFuIGFjY2Vzc2libGUgbmFtZSIsImNhdC5hcmlhOyBiZXN0LXByYWN0aWNlIiwiU2NhbiAyIChFZGl0IE1vZGFsKSwgU2NhbiAzIChWaWV3IE1vZGFsKSIsIjIiLCIuZHFwbC1tb2RhbCIsIjxkaXYgcm9sZT0iImRpYWxvZyIiIGNsYXNzPSIiZHFwbC1tb2RhbCBSZWNpcGVNb2RhbCBkcXBsLWRpYWxvZy1zaG93IiI+IiwiRml4IGFueSBvZiB0aGUgZm9sbG93aW5nOiAgIGFyaWEtbGFiZWwgYXR0cmlidXRlIGRvZXMgbm90IGV4aXN0IG9yIGlzIGVtcHR5ICAgYXJpYS1sYWJlbGxlZGJ5IGF0dHJpYnV0ZSBkb2VzIG5vdCBleGlzdCwgcmVmZXJlbmNlcyBlbGVtZW50cyB0aGF0IGRvIG5vdCBleGlzdCBvciByZWZlcmVuY2VzIGVsZW1lbnRzIHRoYXQgYXJlIGVtcHR5ICAgRWxlbWVudCBoYXMgbm8gdGl0bGUgYXR0cmlidXRlIiwiTi9BIiwiaHR0cHM6Ly9kZXF1ZXVuaXZlcnNpdHkuY29tL3J1bGVzL2F4ZS80LjEzL2FyaWEtZGlhbG9nLW5hbWU/YXBwbGljYXRpb249cGxheXdyaWdodCINCiJQYXNzIiwiYXJpYS1hbGxvd2VkLWF0dHIiLCJQYXNzIiwiRWxlbWVudHMgbXVzdCBvbmx5IHVzZSBzdXBwb3J0ZWQgQVJJQSBhdHRyaWJ1dGVzIiwiRW5zdXJlIGFuIGVsZW1lbnQncyByb2xlIHN1cHBvcnRzIGl0cyBBUklBIGF0dHJpYnV0ZXMiLCJjYXQuYXJpYTsgd2NhZzJhOyB3Y2FnNDEyOyBFTi0zMDEtNTQ5OyBFTi05LjQuMS4yOyBSR0FBdjQ7IFJHQUEtNy4xLjEiLCJTY2FuIDEgKE1haW4gUGFnZSksIFNjYW4gMiAoRWRpdCBNb2RhbCksIFNjYW4gMyAoVmlldyBNb2RhbCkiLCI0NyIsIkFsbCBtYXRjaGluZyBlbGVtZW50cyBwYXNzZWQiLCJOL0EiLCJQYXNzZWQgdmFsaWRhdGlvbiIsIk4vQSIsImh0dHBzOi8vZGVxdWV1bml2ZXJzaXR5LmNvbS9ydWxlcy9heGUvNC4xMy9hcmlhLWFsbG93ZWQtYXR0cj9hcHBsaWNhdGlvbj1wbGF5d3JpZ2h0Ig0KIlBhc3MiLCJhcmlhLWFsbG93ZWQtcm9sZSIsIlBhc3MiLCJBUklBIHJvbGUgc2hvdWxkIGJlIGFwcHJvcHJpYXRlIGZvciB0aGUgZWxlbWVudCIsIkVuc3VyZSByb2xlIGF0dHJpYnV0ZSBoYXMgYW4gYXBwcm9wcmlhdGUgdmFsdWUgZm9yIHRoZSBlbGVtZW50IiwiY2F0LmFyaWE7IGJlc3QtcHJhY3RpY2UiLCJTY2FuIDEgKE1haW4gUGFnZSksIFNjYW4gMiAoRWRpdCBNb2RhbCksIFNjYW4gMyAoVmlldyBNb2RhbCkiLCIxNyIsIkFsbCBtYXRjaGluZyBlbGVtZW50cyBwYXNzZWQiLCJOL0EiLCJQYXNzZWQgdmFsaWRhdGlvbiIsIk4vQSIsImh0dHBzOi8vZGVxdWV1bml2ZXJzaXR5LmNvbS9ydWxlcy9heGUvNC4xMy9hcmlhLWFsbG93ZWQtcm9sZT9hcHBsaWNhdGlvbj1wbGF5d3JpZ2h0Ig0KIlBhc3MiLCJhcmlhLWNvbW1hbmQtbmFtZSIsIlBhc3MiLCJBUklBIGNvbW1hbmRzIG11c3QgaGF2ZSBhbiBhY2Nlc3NpYmxlIG5hbWUiLCJFbnN1cmUgZXZlcnkgQVJJQSBidXR0b24sIGxpbmsgYW5kIG1lbnVpdGVtIGhhcyBhbiBhY2Nlc3NpYmxlIG5hbWUiLCJjYXQuYXJpYTsgd2NhZzJhOyB3Y2FnNDEyOyBUVHY1OyBUVDYuYTsgRU4tMzAxLTU0OTsgRU4tOS40LjEuMjsgQUNUOyBSR0FBdjQ7IFJHQUEtMTEuOS4xIiwiU2NhbiAxIChNYWluIFBhZ2UpIiwiMSIsIkFsbCBtYXRjaGluZyBlbGVtZW50cyBwYXNzZWQiLCJOL0EiLCJQYXNzZWQgdmFsaWRhdGlvbiIsIk4vQSIsImh0dHBzOi8vZGVxdWV1bml2ZXJzaXR5LmNvbS9ydWxlcy9heGUvNC4xMy9hcmlhLWNvbW1hbmQtbmFtZT9hcHBsaWNhdGlvbj1wbGF5d3JpZ2h0Ig0KIlBhc3MiLCJhcmlhLWNvbmRpdGlvbmFsLWF0dHIiLCJQYXNzIiwiQVJJQSBhdHRyaWJ1dGVzIG11c3QgYmUgdXNlZCBhcyBzcGVjaWZpZWQgZm9yIHRoZSBlbGVtZW50J3Mgcm9sZSIsIkVuc3VyZSBBUklBIGF0dHJpYnV0ZXMgYXJlIHVzZWQgYXMgZGVzY3JpYmVkIGluIHRoZSBzcGVjaWZpY2F0aW9uIG9mIHRoZSBlbGVtZW50J3Mgcm9sZSIsImNhdC5hcmlhOyB3Y2FnMmE7IHdjYWc0MTI7IEVOLTMwMS01NDk7IEVOLTkuNC4xLjI7IFJHQUF2NDsgUkdBQS03LjEuMSIsIlNjYW4gMSAoTWFpbiBQYWdlKSwgU2NhbiAyIChFZGl0IE1vZGFsKSwgU2NhbiAzIChWaWV3IE1vZGFsKSIsIjQ3IiwiQWxsIG1hdGNoaW5nIGVsZW1lbnRzIHBhc3NlZCIsIk4vQSIsIlBhc3NlZCB2YWxpZGF0aW9uIiwiTi9BIiwiaHR0cHM6Ly9kZXF1ZXVuaXZlcnNpdHkuY29tL3J1bGVzL2F4ZS80LjEzL2FyaWEtY29uZGl0aW9uYWwtYXR0cj9hcHBsaWNhdGlvbj1wbGF5d3JpZ2h0Ig0KIlBhc3MiLCJhcmlhLWRlcHJlY2F0ZWQtcm9sZSIsIlBhc3MiLCJEZXByZWNhdGVkIEFSSUEgcm9sZXMgbXVzdCBub3QgYmUgdXNlZCIsIkVuc3VyZSBlbGVtZW50cyBkbyBub3QgdXNlIGRlcHJlY2F0ZWQgcm9sZXMiLCJjYXQuYXJpYTsgd2NhZzJhOyB3Y2FnNDEyOyBFTi0zMDEtNTQ5OyBFTi05LjQuMS4yOyBSR0FBdjQ7IFJHQUEtNy4xLjEiLCJTY2FuIDEgKE1haW4gUGFnZSksIFNjYW4gMiAoRWRpdCBNb2RhbCksIFNjYW4gMyAoVmlldyBNb2RhbCkiLCI5IiwiQWxsIG1hdGNoaW5nIGVsZW1lbnRzIHBhc3NlZCIsIk4vQSIsIlBhc3NlZCB2YWxpZGF0aW9uIiwiTi9BIiwiaHR0cHM6Ly9kZXF1ZXVuaXZlcnNpdHkuY29tL3J1bGVzL2F4ZS80LjEzL2FyaWEtZGVwcmVjYXRlZC1yb2xlP2FwcGxpY2F0aW9uPXBsYXl3cmlnaHQiDQoiUGFzcyIsImFyaWEtaGlkZGVuLWJvZHkiLCJQYXNzIiwiYXJpYS1oaWRkZW49IiJ0cnVlIiIgbXVzdCBub3QgYmUgcHJlc2VudCBvbiB0aGUgZG9jdW1lbnQgYm9keSIsIkVuc3VyZSBhcmlhLWhpZGRlbj0iInRydWUiIiBpcyBub3QgcHJlc2VudCBvbiB0aGUgZG9jdW1lbnQgYm9keS4iLCJjYXQuYXJpYTsgd2NhZzJhOyB3Y2FnMTMxOyB3Y2FnNDEyOyBFTi0zMDEtNTQ5OyBFTi05LjEuMy4xOyBFTi05LjQuMS4yOyBSR0FBdjQ7IFJHQUEtMTAuOC4xIiwiU2NhbiAxIChNYWluIFBhZ2UpLCBTY2FuIDIgKEVkaXQgTW9kYWwpLCBTY2FuIDMgKFZpZXcgTW9kYWwpIiwiMyIsIkFsbCBtYXRjaGluZyBlbGVtZW50cyBwYXNzZWQiLCJOL0EiLCJQYXNzZWQgdmFsaWRhdGlvbiIsIk4vQSIsImh0dHBzOi8vZGVxdWV1bml2ZXJzaXR5LmNvbS9ydWxlcy9heGUvNC4xMy9hcmlhLWhpZGRlbi1ib2R5P2FwcGxpY2F0aW9uPXBsYXl3cmlnaHQiDQoiUGFzcyIsImFyaWEtaGlkZGVuLWZvY3VzIiwiUGFzcyIsIkFSSUEgaGlkZGVuIGVsZW1lbnQgbXVzdCBub3QgYmUgZm9jdXNhYmxlIG9yIGNvbnRhaW4gZm9jdXNhYmxlIGVsZW1lbnRzIiwiRW5zdXJlIGFyaWEtaGlkZGVuIGVsZW1lbnRzIGFyZSBub3QgZm9jdXNhYmxlIG5vciBjb250YWluIGZvY3VzYWJsZSBlbGVtZW50cyIsImNhdC5uYW1lLXJvbGUtdmFsdWU7IHdjYWcyYTsgd2NhZzQxMjsgVFR2NTsgVFQ2LmE7IEVOLTMwMS01NDk7IEVOLTkuNC4xLjI7IFJHQUF2NDsgUkdBQS0xMC44LjEiLCJTY2FuIDEgKE1haW4gUGFnZSksIFNjYW4gMiAoRWRpdCBNb2RhbCksIFNjYW4gMyAoVmlldyBNb2RhbCkiLCI1MyIsIkFsbCBtYXRjaGluZyBlbGVtZW50cyBwYXNzZWQiLCJOL0EiLCJQYXNzZWQgdmFsaWRhdGlvbiIsIk4vQSIsImh0dHBzOi8vZGVxdWV1bml2ZXJzaXR5LmNvbS9ydWxlcy9heGUvNC4xMy9hcmlhLWhpZGRlbi1mb2N1cz9hcHBsaWNhdGlvbj1wbGF5d3JpZ2h0Ig0KIlBhc3MiLCJhcmlhLXByb2hpYml0ZWQtYXR0ciIsIlBhc3MiLCJFbGVtZW50cyBtdXN0IG9ubHkgdXNlIHBlcm1pdHRlZCBBUklBIGF0dHJpYnV0ZXMiLCJFbnN1cmUgQVJJQSBhdHRyaWJ1dGVzIGFyZSBub3QgcHJvaGliaXRlZCBmb3IgYW4gZWxlbWVudCdzIHJvbGUiLCJjYXQuYXJpYTsgd2NhZzJhOyB3Y2FnNDEyOyBFTi0zMDEtNTQ5OyBFTi05LjQuMS4yOyBSR0FBdjQ7IFJHQUEtNy4xLjEiLCJTY2FuIDEgKE1haW4gUGFnZSksIFNjYW4gMiAoRWRpdCBNb2RhbCksIFNjYW4gMyAoVmlldyBNb2RhbCkiLCI0MyIsIkFsbCBtYXRjaGluZyBlbGVtZW50cyBwYXNzZWQiLCJOL0EiLCJQYXNzZWQgdmFsaWRhdGlvbiIsIk4vQSIsImh0dHBzOi8vZGVxdWV1bml2ZXJzaXR5LmNvbS9ydWxlcy9heGUvNC4xMy9hcmlhLXByb2hpYml0ZWQtYXR0cj9hcHBsaWNhdGlvbj1wbGF5d3JpZ2h0Ig0KIlBhc3MiLCJhcmlhLXJlcXVpcmVkLWF0dHIiLCJQYXNzIiwiUmVxdWlyZWQgQVJJQSBhdHRyaWJ1dGVzIG11c3QgYmUgcHJvdmlkZWQiLCJFbnN1cmUgZWxlbWVudHMgd2l0aCBBUklBIHJvbGVzIGhhdmUgYWxsIHJlcXVpcmVkIEFSSUEgYXR0cmlidXRlcyIsImNhdC5hcmlhOyB3Y2FnMmE7IHdjYWc0MTI7IEVOLTMwMS01NDk7IEVOLTkuNC4xLjI7IFJHQUF2NDsgUkdBQS03LjEuMSIsIlNjYW4gMSAoTWFpbiBQYWdlKSwgU2NhbiAyIChFZGl0IE1vZGFsKSwgU2NhbiAzIChWaWV3IE1vZGFsKSIsIjkiLCJBbGwgbWF0Y2hpbmcgZWxlbWVudHMgcGFzc2VkIiwiTi9BIiwiUGFzc2VkIHZhbGlkYXRpb24iLCJOL0EiLCJodHRwczovL2RlcXVldW5pdmVyc2l0eS5jb20vcnVsZXMvYXhlLzQuMTMvYXJpYS1yZXF1aXJlZC1hdHRyP2FwcGxpY2F0aW9uPXBsYXl3cmlnaHQiDQoiUGFzcyIsImFyaWEtcmVxdWlyZWQtY2hpbGRyZW4iLCJQYXNzIiwiQ2VydGFpbiBBUklBIHJvbGVzIG11c3QgY29udGFpbiBwYXJ0aWN1bGFyIGNoaWxkcmVuIiwiRW5zdXJlIGVsZW1lbnRzIHdpdGggYW4gQVJJQSByb2xlIHRoYXQgcmVxdWlyZSBjaGlsZCByb2xlcyBjb250YWluIHRoZW0iLCJjYXQuYXJpYTsgd2NhZzJhOyB3Y2FnMTMxOyBFTi0zMDEtNTQ5OyBFTi05LjEuMy4xOyBSR0FBdjQ7IFJHQUEtOS4zLjEiLCJTY2FuIDEgKE1haW4gUGFnZSkiLCIxIiwiQWxsIG1hdGNoaW5nIGVsZW1lbnRzIHBhc3NlZCIsIk4vQSIsIlBhc3NlZCB2YWxpZGF0aW9uIiwiTi9BIiwiaHR0cHM6Ly9kZXF1ZXVuaXZlcnNpdHkuY29tL3J1bGVzL2F4ZS80LjEzL2FyaWEtcmVxdWlyZWQtY2hpbGRyZW4/YXBwbGljYXRpb249cGxheXdyaWdodCINCiJQYXNzIiwiYXJpYS1yZXF1aXJlZC1wYXJlbnQiLCJQYXNzIiwiQ2VydGFpbiBBUklBIHJvbGVzIG11c3QgYmUgY29udGFpbmVkIGJ5IHBhcnRpY3VsYXIgcGFyZW50cyIsIkVuc3VyZSBlbGVtZW50cyB3aXRoIGFuIEFSSUEgcm9sZSB0aGF0IHJlcXVpcmUgcGFyZW50IHJvbGVzIGFyZSBjb250YWluZWQgYnkgdGhlbSIsImNhdC5hcmlhOyB3Y2FnMmE7IHdjYWcxMzE7IEVOLTMwMS01NDk7IEVOLTkuMS4zLjE7IFJHQUF2NDsgUkdBQS05LjMuMSIsIlNjYW4gMSAoTWFpbiBQYWdlKSIsIjEiLCJBbGwgbWF0Y2hpbmcgZWxlbWVudHMgcGFzc2VkIiwiTi9BIiwiUGFzc2VkIHZhbGlkYXRpb24iLCJOL0EiLCJodHRwczovL2RlcXVldW5pdmVyc2l0eS5jb20vcnVsZXMvYXhlLzQuMTMvYXJpYS1yZXF1aXJlZC1wYXJlbnQ/YXBwbGljYXRpb249cGxheXdyaWdodCINCiJQYXNzIiwiYXJpYS1yb2xlcyIsIlBhc3MiLCJBUklBIHJvbGVzIHVzZWQgbXVzdCBjb25mb3JtIHRvIHZhbGlkIHZhbHVlcyIsIkVuc3VyZSBhbGwgZWxlbWVudHMgd2l0aCBhIHJvbGUgYXR0cmlidXRlIHVzZSBhIHZhbGlkIHZhbHVlIiwiY2F0LmFyaWE7IHdjYWcyYTsgd2NhZzQxMjsgRU4tMzAxLTU0OTsgRU4tOS40LjEuMjsgUkdBQXY0OyBSR0FBLTcuMS4xIiwiU2NhbiAxIChNYWluIFBhZ2UpLCBTY2FuIDIgKEVkaXQgTW9kYWwpLCBTY2FuIDMgKFZpZXcgTW9kYWwpIiwiOSIsIkFsbCBtYXRjaGluZyBlbGVtZW50cyBwYXNzZWQiLCJOL0EiLCJQYXNzZWQgdmFsaWRhdGlvbiIsIk4vQSIsImh0dHBzOi8vZGVxdWV1bml2ZXJzaXR5LmNvbS9ydWxlcy9heGUvNC4xMy9hcmlhLXJvbGVzP2FwcGxpY2F0aW9uPXBsYXl3cmlnaHQiDQoiUGFzcyIsImFyaWEtdmFsaWQtYXR0ci12YWx1ZSIsIlBhc3MiLCJBUklBIGF0dHJpYnV0ZXMgbXVzdCBjb25mb3JtIHRvIHZhbGlkIHZhbHVlcyIsIkVuc3VyZSBhbGwgQVJJQSBhdHRyaWJ1dGVzIGhhdmUgdmFsaWQgdmFsdWVzIiwiY2F0LmFyaWE7IHdjYWcyYTsgd2NhZzQxMjsgRU4tMzAxLTU0OTsgRU4tOS40LjEuMjsgUkdBQXY0OyBSR0FBLTcuMS4xIiwiU2NhbiAxIChNYWluIFBhZ2UpLCBTY2FuIDIgKEVkaXQgTW9kYWwpLCBTY2FuIDMgKFZpZXcgTW9kYWwpIiwiNDciLCJBbGwgbWF0Y2hpbmcgZWxlbWVudHMgcGFzc2VkIiwiTi9BIiwiUGFzc2VkIHZhbGlkYXRpb24iLCJOL0EiLCJodHRwczovL2RlcXVldW5pdmVyc2l0eS5jb20vcnVsZXMvYXhlLzQuMTMvYXJpYS12YWxpZC1hdHRyLXZhbHVlP2FwcGxpY2F0aW9uPXBsYXl3cmlnaHQiDQoiUGFzcyIsImFyaWEtdmFsaWQtYXR0ciIsIlBhc3MiLCJBUklBIGF0dHJpYnV0ZXMgbXVzdCBjb25mb3JtIHRvIHZhbGlkIG5hbWVzIiwiRW5zdXJlIGF0dHJpYnV0ZXMgdGhhdCBiZWdpbiB3aXRoIGFyaWEtIGFyZSB2YWxpZCBBUklBIGF0dHJpYnV0ZXMiLCJjYXQuYXJpYTsgd2NhZzJhOyB3Y2FnNDEyOyBFTi0zMDEtNTQ5OyBFTi05LjQuMS4yOyBSR0FBdjQ7IFJHQUEtNy4xLjEiLCJTY2FuIDEgKE1haW4gUGFnZSksIFNjYW4gMiAoRWRpdCBNb2RhbCksIFNjYW4gMyAoVmlldyBNb2RhbCkiLCI0NyIsIkFsbCBtYXRjaGluZyBlbGVtZW50cyBwYXNzZWQiLCJOL0EiLCJQYXNzZWQgdmFsaWRhdGlvbiIsIk4vQSIsImh0dHBzOi8vZGVxdWV1bml2ZXJzaXR5LmNvbS9ydWxlcy9heGUvNC4xMy9hcmlhLXZhbGlkLWF0dHI/YXBwbGljYXRpb249cGxheXdyaWdodCINCiJQYXNzIiwiYnV0dG9uLW5hbWUiLCJQYXNzIiwiQnV0dG9ucyBtdXN0IGhhdmUgZGlzY2VybmlibGUgdGV4dCIsIkVuc3VyZSBidXR0b25zIGhhdmUgZGlzY2VybmlibGUgdGV4dCIsImNhdC5uYW1lLXJvbGUtdmFsdWU7IHdjYWcyYTsgd2NhZzQxMjsgc2VjdGlvbjUwODsgc2VjdGlvbjUwOC4yMi5hOyBUVHY1OyBUVDYuYTsgRU4tMzAxLTU0OTsgRU4tOS40LjEuMjsgQUNUOyBSR0FBdjQ7IFJHQUEtMTEuOS4xIiwiU2NhbiAxIChNYWluIFBhZ2UpLCBTY2FuIDIgKEVkaXQgTW9kYWwpLCBTY2FuIDMgKFZpZXcgTW9kYWwpIiwiMzAiLCJBbGwgbWF0Y2hpbmcgZWxlbWVudHMgcGFzc2VkIiwiTi9BIiwiUGFzc2VkIHZhbGlkYXRpb24iLCJOL0EiLCJodHRwczovL2RlcXVldW5pdmVyc2l0eS5jb20vcnVsZXMvYXhlLzQuMTMvYnV0dG9uLW5hbWU/YXBwbGljYXRpb249cGxheXdyaWdodCINCiJQYXNzIiwiYnlwYXNzIiwiUGFzcyIsIlBhZ2UgbXVzdCBoYXZlIG1lYW5zIHRvIGJ5cGFzcyByZXBlYXRlZCBibG9ja3MiLCJFbnN1cmUgZWFjaCBwYWdlIGhhcyBhdCBsZWFzdCBvbmUgbWVjaGFuaXNtIGZvciBhIHVzZXIgdG8gYnlwYXNzIG5hdmlnYXRpb24gYW5kIGp1bXAgc3RyYWlnaHQgdG8gdGhlIGNvbnRlbnQiLCJjYXQua2V5Ym9hcmQ7IHdjYWcyYTsgd2NhZzI0MTsgc2VjdGlvbjUwODsgc2VjdGlvbjUwOC4yMi5vOyBUVHY1OyBUVDkuYTsgRU4tMzAxLTU0OTsgRU4tOS4yLjQuMTsgUkdBQXY0OyBSR0FBLTEyLjcuMSIsIlNjYW4gMSAoTWFpbiBQYWdlKSIsIjEiLCJBbGwgbWF0Y2hpbmcgZWxlbWVudHMgcGFzc2VkIiwiTi9BIiwiUGFzc2VkIHZhbGlkYXRpb24iLCJOL0EiLCJodHRwczovL2RlcXVldW5pdmVyc2l0eS5jb20vcnVsZXMvYXhlLzQuMTMvYnlwYXNzP2FwcGxpY2F0aW9uPXBsYXl3cmlnaHQiDQoiUGFzcyIsImNvbG9yLWNvbnRyYXN0IiwiUGFzcyIsIkVsZW1lbnRzIG11c3QgbWVldCBtaW5pbXVtIGNvbG9yIGNvbnRyYXN0IHJhdGlvIHRocmVzaG9sZHMiLCJFbnN1cmUgdGhlIGNvbnRyYXN0IGJldHdlZW4gZm9yZWdyb3VuZCBhbmQgYmFja2dyb3VuZCBjb2xvcnMgbWVldHMgV0NBRyAyIEFBIG1pbmltdW0gY29udHJhc3QgcmF0aW8gdGhyZXNob2xkcyIsImNhdC5jb2xvcjsgd2NhZzJhYTsgd2NhZzE0MzsgVFR2NTsgVFQxMy5jOyBFTi0zMDEtNTQ5OyBFTi05LjEuNC4zOyBBQ1Q7IFJHQUF2NDsgUkdBQS0zLjIuMSIsIlNjYW4gMSAoTWFpbiBQYWdlKSwgU2NhbiAyIChFZGl0IE1vZGFsKSwgU2NhbiAzIChWaWV3IE1vZGFsKSIsIjE4MyIsIkFsbCBtYXRjaGluZyBlbGVtZW50cyBwYXNzZWQiLCJOL0EiLCJQYXNzZWQgdmFsaWRhdGlvbiIsIk4vQSIsImh0dHBzOi8vZGVxdWV1bml2ZXJzaXR5LmNvbS9ydWxlcy9heGUvNC4xMy9jb2xvci1jb250cmFzdD9hcHBsaWNhdGlvbj1wbGF5d3JpZ2h0Ig0KIlBhc3MiLCJkb2N1bWVudC10aXRsZSIsIlBhc3MiLCJEb2N1bWVudHMgbXVzdCBoYXZlIDx0aXRsZT4gZWxlbWVudCB0byBhaWQgaW4gbmF2aWdhdGlvbiIsIkVuc3VyZSBlYWNoIEhUTUwgZG9jdW1lbnQgY29udGFpbnMgYSBub24tZW1wdHkgPHRpdGxlPiBlbGVtZW50IiwiY2F0LnRleHQtYWx0ZXJuYXRpdmVzOyB3Y2FnMmE7IHdjYWcyNDI7IFRUdjU7IFRUMTIuYTsgRU4tMzAxLTU0OTsgRU4tOS4yLjQuMjsgQUNUOyBSR0FBdjQ7IFJHQUEtOC41LjEiLCJTY2FuIDEgKE1haW4gUGFnZSksIFNjYW4gMiAoRWRpdCBNb2RhbCksIFNjYW4gMyAoVmlldyBNb2RhbCkiLCIzIiwiQWxsIG1hdGNoaW5nIGVsZW1lbnRzIHBhc3NlZCIsIk4vQSIsIlBhc3NlZCB2YWxpZGF0aW9uIiwiTi9BIiwiaHR0cHM6Ly9kZXF1ZXVuaXZlcnNpdHkuY29tL3J1bGVzL2F4ZS80LjEzL2RvY3VtZW50LXRpdGxlP2FwcGxpY2F0aW9uPXBsYXl3cmlnaHQiDQoiUGFzcyIsImR1cGxpY2F0ZS1pZC1hcmlhIiwiUGFzcyIsIklEcyB1c2VkIGluIEFSSUEgYW5kIGxhYmVscyBtdXN0IGJlIHVuaXF1ZSIsIkVuc3VyZSBldmVyeSBpZCBhdHRyaWJ1dGUgdmFsdWUgdXNlZCBpbiBBUklBIGFuZCBpbiBsYWJlbHMgaXMgdW5pcXVlIiwiY2F0LnBhcnNpbmc7IHdjYWcyYTsgd2NhZzQxMjsgRU4tMzAxLTU0OTsgRU4tOS40LjEuMjsgUkdBQXY0OyBSR0FBLTguMi4xIiwiU2NhbiAxIChNYWluIFBhZ2UpLCBTY2FuIDIgKEVkaXQgTW9kYWwpLCBTY2FuIDMgKFZpZXcgTW9kYWwpIiwiMjMiLCJBbGwgbWF0Y2hpbmcgZWxlbWVudHMgcGFzc2VkIiwiTi9BIiwiUGFzc2VkIHZhbGlkYXRpb24iLCJOL0EiLCJodHRwczovL2RlcXVldW5pdmVyc2l0eS5jb20vcnVsZXMvYXhlLzQuMTMvZHVwbGljYXRlLWlkLWFyaWE/YXBwbGljYXRpb249cGxheXdyaWdodCINCiJQYXNzIiwiZW1wdHktaGVhZGluZyIsIlBhc3MiLCJIZWFkaW5ncyBzaG91bGQgbm90IGJlIGVtcHR5IiwiRW5zdXJlIGhlYWRpbmdzIGhhdmUgZGlzY2VybmlibGUgdGV4dCIsImNhdC5uYW1lLXJvbGUtdmFsdWU7IGJlc3QtcHJhY3RpY2UiLCJTY2FuIDEgKE1haW4gUGFnZSksIFNjYW4gMiAoRWRpdCBNb2RhbCksIFNjYW4gMyAoVmlldyBNb2RhbCkiLCIxMSIsIkFsbCBtYXRjaGluZyBlbGVtZW50cyBwYXNzZWQiLCJOL0EiLCJQYXNzZWQgdmFsaWRhdGlvbiIsIk4vQSIsImh0dHBzOi8vZGVxdWV1bml2ZXJzaXR5LmNvbS9ydWxlcy9heGUvNC4xMy9lbXB0eS1oZWFkaW5nP2FwcGxpY2F0aW9uPXBsYXl3cmlnaHQiDQoiUGFzcyIsImVtcHR5LXRhYmxlLWhlYWRlciIsIlBhc3MiLCJUYWJsZSBoZWFkZXIgdGV4dCBzaG91bGQgbm90IGJlIGVtcHR5IiwiRW5zdXJlIHRhYmxlIGhlYWRlcnMgaGF2ZSBkaXNjZXJuaWJsZSB0ZXh0IiwiY2F0Lm5hbWUtcm9sZS12YWx1ZTsgYmVzdC1wcmFjdGljZSIsIlNjYW4gMSAoTWFpbiBQYWdlKSIsIjI0IiwiQWxsIG1hdGNoaW5nIGVsZW1lbnRzIHBhc3NlZCIsIk4vQSIsIlBhc3NlZCB2YWxpZGF0aW9uIiwiTi9BIiwiaHR0cHM6Ly9kZXF1ZXVuaXZlcnNpdHkuY29tL3J1bGVzL2F4ZS80LjEzL2VtcHR5LXRhYmxlLWhlYWRlcj9hcHBsaWNhdGlvbj1wbGF5d3JpZ2h0Ig0KIlBhc3MiLCJoZWFkaW5nLW9yZGVyIiwiUGFzcyIsIkhlYWRpbmcgbGV2ZWxzIHNob3VsZCBvbmx5IGluY3JlYXNlIGJ5IG9uZSIsIkVuc3VyZSB0aGUgb3JkZXIgb2YgaGVhZGluZ3MgaXMgc2VtYW50aWNhbGx5IGNvcnJlY3QiLCJjYXQuc2VtYW50aWNzOyBiZXN0LXByYWN0aWNlIiwiU2NhbiAxIChNYWluIFBhZ2UpLCBTY2FuIDIgKEVkaXQgTW9kYWwpLCBTY2FuIDMgKFZpZXcgTW9kYWwpIiwiMTEiLCJBbGwgbWF0Y2hpbmcgZWxlbWVudHMgcGFzc2VkIiwiTi9BIiwiUGFzc2VkIHZhbGlkYXRpb24iLCJOL0EiLCJodHRwczovL2RlcXVldW5pdmVyc2l0eS5jb20vcnVsZXMvYXhlLzQuMTMvaGVhZGluZy1vcmRlcj9hcHBsaWNhdGlvbj1wbGF5d3JpZ2h0Ig0KIlBhc3MiLCJodG1sLWhhcy1sYW5nIiwiUGFzcyIsIjxodG1sPiBlbGVtZW50IG11c3QgaGF2ZSBhIGxhbmcgYXR0cmlidXRlIiwiRW5zdXJlIGV2ZXJ5IEhUTUwgZG9jdW1lbnQgaGFzIGEgbGFuZyBhdHRyaWJ1dGUiLCJjYXQubGFuZ3VhZ2U7IHdjYWcyYTsgd2NhZzMxMTsgVFR2NTsgVFQxMS5hOyBFTi0zMDEtNTQ5OyBFTi05LjMuMS4xOyBBQ1Q7IFJHQUF2NDsgUkdBQS04LjMuMSIsIlNjYW4gMSAoTWFpbiBQYWdlKSwgU2NhbiAyIChFZGl0IE1vZGFsKSwgU2NhbiAzIChWaWV3IE1vZGFsKSIsIjMiLCJBbGwgbWF0Y2hpbmcgZWxlbWVudHMgcGFzc2VkIiwiTi9BIiwiUGFzc2VkIHZhbGlkYXRpb24iLCJOL0EiLCJodHRwczovL2RlcXVldW5pdmVyc2l0eS5jb20vcnVsZXMvYXhlLzQuMTMvaHRtbC1oYXMtbGFuZz9hcHBsaWNhdGlvbj1wbGF5d3JpZ2h0Ig0KIlBhc3MiLCJodG1sLWxhbmctdmFsaWQiLCJQYXNzIiwiPGh0bWw+IGVsZW1lbnQgbXVzdCBoYXZlIGEgdmFsaWQgdmFsdWUgZm9yIHRoZSBsYW5nIGF0dHJpYnV0ZSIsIkVuc3VyZSB0aGUgbGFuZyBhdHRyaWJ1dGUgb2YgdGhlIDxodG1sPiBlbGVtZW50IGhhcyBhIHZhbGlkIHZhbHVlIiwiY2F0Lmxhbmd1YWdlOyB3Y2FnMmE7IHdjYWczMTE7IFRUdjU7IFRUMTEuYTsgRU4tMzAxLTU0OTsgRU4tOS4zLjEuMTsgQUNUOyBSR0FBdjQ7IFJHQUEtOC40LjEiLCJTY2FuIDEgKE1haW4gUGFnZSksIFNjYW4gMiAoRWRpdCBNb2RhbCksIFNjYW4gMyAoVmlldyBNb2RhbCkiLCIzIiwiQWxsIG1hdGNoaW5nIGVsZW1lbnRzIHBhc3NlZCIsIk4vQSIsIlBhc3NlZCB2YWxpZGF0aW9uIiwiTi9BIiwiaHR0cHM6Ly9kZXF1ZXVuaXZlcnNpdHkuY29tL3J1bGVzL2F4ZS80LjEzL2h0bWwtbGFuZy12YWxpZD9hcHBsaWNhdGlvbj1wbGF5d3JpZ2h0Ig0KIlBhc3MiLCJpbWFnZS1hbHQiLCJQYXNzIiwiSW1hZ2VzIG11c3QgaGF2ZSBhbHRlcm5hdGl2ZSB0ZXh0IiwiRW5zdXJlIDxpbWc+IGVsZW1lbnRzIGhhdmUgYWx0ZXJuYXRpdmUgdGV4dCBvciBhIHJvbGUgb2Ygbm9uZSBvciBwcmVzZW50YXRpb24iLCJjYXQudGV4dC1hbHRlcm5hdGl2ZXM7IHdjYWcyYTsgd2NhZzExMTsgc2VjdGlvbjUwODsgc2VjdGlvbjUwOC4yMi5hOyBUVHY1OyBUVDcuYTsgVFQ3LmI7IEVOLTMwMS01NDk7IEVOLTkuMS4xLjE7IEFDVDsgUkdBQXY0OyBSR0FBLTEuMS4xIiwiU2NhbiAxIChNYWluIFBhZ2UpIiwiMTIiLCJBbGwgbWF0Y2hpbmcgZWxlbWVudHMgcGFzc2VkIiwiTi9BIiwiUGFzc2VkIHZhbGlkYXRpb24iLCJOL0EiLCJodHRwczovL2RlcXVldW5pdmVyc2l0eS5jb20vcnVsZXMvYXhlLzQuMTMvaW1hZ2UtYWx0P2FwcGxpY2F0aW9uPXBsYXl3cmlnaHQiDQoiUGFzcyIsImltYWdlLXJlZHVuZGFudC1hbHQiLCJQYXNzIiwiQWx0ZXJuYXRpdmUgdGV4dCBvZiBpbWFnZXMgc2hvdWxkIG5vdCBiZSByZXBlYXRlZCBhcyB0ZXh0IiwiRW5zdXJlIGltYWdlIGFsdGVybmF0aXZlIGlzIG5vdCByZXBlYXRlZCBhcyB0ZXh0IiwiY2F0LnRleHQtYWx0ZXJuYXRpdmVzOyBiZXN0LXByYWN0aWNlIiwiU2NhbiAxIChNYWluIFBhZ2UpIiwiMjAiLCJBbGwgbWF0Y2hpbmcgZWxlbWVudHMgcGFzc2VkIiwiTi9BIiwiUGFzc2VkIHZhbGlkYXRpb24iLCJOL0EiLCJodHRwczovL2RlcXVldW5pdmVyc2l0eS5jb20vcnVsZXMvYXhlLzQuMTMvaW1hZ2UtcmVkdW5kYW50LWFsdD9hcHBsaWNhdGlvbj1wbGF5d3JpZ2h0Ig0KIlBhc3MiLCJsYW5kbWFyay1iYW5uZXItaXMtdG9wLWxldmVsIiwiUGFzcyIsIkJhbm5lciBsYW5kbWFyayBzaG91bGQgbm90IGJlIGNvbnRhaW5lZCBpbiBhbm90aGVyIGxhbmRtYXJrIiwiRW5zdXJlIHRoZSBiYW5uZXIgbGFuZG1hcmsgaXMgYXQgdG9wIGxldmVsIiwiY2F0LnNlbWFudGljczsgYmVzdC1wcmFjdGljZSIsIlNjYW4gMSAoTWFpbiBQYWdlKSIsIjEiLCJBbGwgbWF0Y2hpbmcgZWxlbWVudHMgcGFzc2VkIiwiTi9BIiwiUGFzc2VkIHZhbGlkYXRpb24iLCJOL0EiLCJodHRwczovL2RlcXVldW5pdmVyc2l0eS5jb20vcnVsZXMvYXhlLzQuMTMvbGFuZG1hcmstYmFubmVyLWlzLXRvcC1sZXZlbD9hcHBsaWNhdGlvbj1wbGF5d3JpZ2h0Ig0KIlBhc3MiLCJsYW5kbWFyay1tYWluLWlzLXRvcC1sZXZlbCIsIlBhc3MiLCJNYWluIGxhbmRtYXJrIHNob3VsZCBub3QgYmUgY29udGFpbmVkIGluIGFub3RoZXIgbGFuZG1hcmsiLCJFbnN1cmUgdGhlIG1haW4gbGFuZG1hcmsgaXMgYXQgdG9wIGxldmVsIiwiY2F0LnNlbWFudGljczsgYmVzdC1wcmFjdGljZSIsIlNjYW4gMSAoTWFpbiBQYWdlKSwgU2NhbiAyIChFZGl0IE1vZGFsKSwgU2NhbiAzIChWaWV3IE1vZGFsKSIsIjMiLCJBbGwgbWF0Y2hpbmcgZWxlbWVudHMgcGFzc2VkIiwiTi9BIiwiUGFzc2VkIHZhbGlkYXRpb24iLCJOL0EiLCJodHRwczovL2RlcXVldW5pdmVyc2l0eS5jb20vcnVsZXMvYXhlLzQuMTMvbGFuZG1hcmstbWFpbi1pcy10b3AtbGV2ZWw/YXBwbGljYXRpb249cGxheXdyaWdodCINCiJQYXNzIiwibGFuZG1hcmstbm8tZHVwbGljYXRlLWJhbm5lciIsIlBhc3MiLCJEb2N1bWVudCBzaG91bGQgbm90IGhhdmUgbW9yZSB0aGFuIG9uZSBiYW5uZXIgbGFuZG1hcmsiLCJFbnN1cmUgdGhlIGRvY3VtZW50IGhhcyBhdCBtb3N0IG9uZSBiYW5uZXIgbGFuZG1hcmsiLCJjYXQuc2VtYW50aWNzOyBiZXN0LXByYWN0aWNlIiwiU2NhbiAxIChNYWluIFBhZ2UpIiwiMSIsIkFsbCBtYXRjaGluZyBlbGVtZW50cyBwYXNzZWQiLCJOL0EiLCJQYXNzZWQgdmFsaWRhdGlvbiIsIk4vQSIsImh0dHBzOi8vZGVxdWV1bml2ZXJzaXR5LmNvbS9ydWxlcy9heGUvNC4xMy9sYW5kbWFyay1uby1kdXBsaWNhdGUtYmFubmVyP2FwcGxpY2F0aW9uPXBsYXl3cmlnaHQiDQoiUGFzcyIsImxhbmRtYXJrLW5vLWR1cGxpY2F0ZS1tYWluIiwiUGFzcyIsIkRvY3VtZW50IHNob3VsZCBub3QgaGF2ZSBtb3JlIHRoYW4gb25lIG1haW4gbGFuZG1hcmsiLCJFbnN1cmUgdGhlIGRvY3VtZW50IGhhcyBhdCBtb3N0IG9uZSBtYWluIGxhbmRtYXJrIiwiY2F0LnNlbWFudGljczsgYmVzdC1wcmFjdGljZSIsIlNjYW4gMSAoTWFpbiBQYWdlKSwgU2NhbiAyIChFZGl0IE1vZGFsKSwgU2NhbiAzIChWaWV3IE1vZGFsKSIsIjMiLCJBbGwgbWF0Y2hpbmcgZWxlbWVudHMgcGFzc2VkIiwiTi9BIiwiUGFzc2VkIHZhbGlkYXRpb24iLCJOL0EiLCJodHRwczovL2RlcXVldW5pdmVyc2l0eS5jb20vcnVsZXMvYXhlLzQuMTMvbGFuZG1hcmstbm8tZHVwbGljYXRlLW1haW4/YXBwbGljYXRpb249cGxheXdyaWdodCINCiJQYXNzIiwibGFuZG1hcmstb25lLW1haW4iLCJQYXNzIiwiRG9jdW1lbnQgc2hvdWxkIGhhdmUgb25lIG1haW4gbGFuZG1hcmsiLCJFbnN1cmUgdGhlIGRvY3VtZW50IGhhcyBhIG1haW4gbGFuZG1hcmsiLCJjYXQuc2VtYW50aWNzOyBiZXN0LXByYWN0aWNlIiwiU2NhbiAxIChNYWluIFBhZ2UpLCBTY2FuIDIgKEVkaXQgTW9kYWwpLCBTY2FuIDMgKFZpZXcgTW9kYWwpIiwiMyIsIkFsbCBtYXRjaGluZyBlbGVtZW50cyBwYXNzZWQiLCJOL0EiLCJQYXNzZWQgdmFsaWRhdGlvbiIsIk4vQSIsImh0dHBzOi8vZGVxdWV1bml2ZXJzaXR5LmNvbS9ydWxlcy9heGUvNC4xMy9sYW5kbWFyay1vbmUtbWFpbj9hcHBsaWNhdGlvbj1wbGF5d3JpZ2h0Ig0KIlBhc3MiLCJsYW5kbWFyay11bmlxdWUiLCJQYXNzIiwiTGFuZG1hcmtzIHNob3VsZCBoYXZlIGEgdW5pcXVlIHJvbGUgb3Igcm9sZS9sYWJlbC90aXRsZSAoaS5lLiBhY2Nlc3NpYmxlIG5hbWUpIGNvbWJpbmF0aW9uIiwiRW5zdXJlIGxhbmRtYXJrcyBhcmUgdW5pcXVlIiwiY2F0LnNlbWFudGljczsgYmVzdC1wcmFjdGljZSIsIlNjYW4gMSAoTWFpbiBQYWdlKSwgU2NhbiAyIChFZGl0IE1vZGFsKSwgU2NhbiAzIChWaWV3IE1vZGFsKSIsIjUiLCJBbGwgbWF0Y2hpbmcgZWxlbWVudHMgcGFzc2VkIiwiTi9BIiwiUGFzc2VkIHZhbGlkYXRpb24iLCJOL0EiLCJodHRwczovL2RlcXVldW5pdmVyc2l0eS5jb20vcnVsZXMvYXhlLzQuMTMvbGFuZG1hcmstdW5pcXVlP2FwcGxpY2F0aW9uPXBsYXl3cmlnaHQiDQoiUGFzcyIsImxpbmstbmFtZSIsIlBhc3MiLCJMaW5rcyBtdXN0IGhhdmUgZGlzY2VybmlibGUgdGV4dCIsIkVuc3VyZSBsaW5rcyBoYXZlIGRpc2Nlcm5pYmxlIHRleHQiLCJjYXQubmFtZS1yb2xlLXZhbHVlOyB3Y2FnMmE7IHdjYWcyNDQ7IHdjYWc0MTI7IHNlY3Rpb241MDg7IHNlY3Rpb241MDguMjIuYTsgVFR2NTsgVFQ2LmE7IEVOLTMwMS01NDk7IEVOLTkuMi40LjQ7IEVOLTkuNC4xLjI7IEFDVDsgUkdBQXY0OyBSR0FBLTYuMi4xIiwiU2NhbiAxIChNYWluIFBhZ2UpIiwiMSIsIkFsbCBtYXRjaGluZyBlbGVtZW50cyBwYXNzZWQiLCJOL0EiLCJQYXNzZWQgdmFsaWRhdGlvbiIsIk4vQSIsImh0dHBzOi8vZGVxdWV1bml2ZXJzaXR5LmNvbS9ydWxlcy9heGUvNC4xMy9saW5rLW5hbWU/YXBwbGljYXRpb249cGxheXdyaWdodCINCiJQYXNzIiwibGlzdCIsIlBhc3MiLCI8dWw+IGFuZCA8b2w+IG11c3Qgb25seSBkaXJlY3RseSBjb250YWluIDxsaT4sIDxzY3JpcHQ+IG9yIDx0ZW1wbGF0ZT4gZWxlbWVudHMiLCJFbnN1cmUgdGhhdCBsaXN0cyBhcmUgc3RydWN0dXJlZCBjb3JyZWN0bHkiLCJjYXQuc3RydWN0dXJlOyB3Y2FnMmE7IHdjYWcxMzE7IEVOLTMwMS01NDk7IEVOLTkuMS4zLjE7IFJHQUF2NDsgUkdBQS05LjMuMSIsIlNjYW4gMSAoTWFpbiBQYWdlKSwgU2NhbiAzIChWaWV3IE1vZGFsKSIsIjMiLCJBbGwgbWF0Y2hpbmcgZWxlbWVudHMgcGFzc2VkIiwiTi9BIiwiUGFzc2VkIHZhbGlkYXRpb24iLCJOL0EiLCJodHRwczovL2RlcXVldW5pdmVyc2l0eS5jb20vcnVsZXMvYXhlLzQuMTMvbGlzdD9hcHBsaWNhdGlvbj1wbGF5d3JpZ2h0Ig0KIlBhc3MiLCJsaXN0aXRlbSIsIlBhc3MiLCI8bGk+IGVsZW1lbnRzIG11c3QgYmUgY29udGFpbmVkIGluIGEgPHVsPiBvciA8b2w+IiwiRW5zdXJlIDxsaT4gZWxlbWVudHMgYXJlIHVzZWQgc2VtYW50aWNhbGx5IiwiY2F0LnN0cnVjdHVyZTsgd2NhZzJhOyB3Y2FnMTMxOyBFTi0zMDEtNTQ5OyBFTi05LjEuMy4xOyBSR0FBdjQ7IFJHQUEtOS4zLjEiLCJTY2FuIDEgKE1haW4gUGFnZSksIFNjYW4gMyAoVmlldyBNb2RhbCkiLCIyMCIsIkFsbCBtYXRjaGluZyBlbGVtZW50cyBwYXNzZWQiLCJOL0EiLCJQYXNzZWQgdmFsaWRhdGlvbiIsIk4vQSIsImh0dHBzOi8vZGVxdWV1bml2ZXJzaXR5LmNvbS9ydWxlcy9heGUvNC4xMy9saXN0aXRlbT9hcHBsaWNhdGlvbj1wbGF5d3JpZ2h0Ig0KIlBhc3MiLCJuZXN0ZWQtaW50ZXJhY3RpdmUiLCJQYXNzIiwiSW50ZXJhY3RpdmUgY29udHJvbHMgbXVzdCBub3QgYmUgbmVzdGVkIiwiRW5zdXJlIGludGVyYWN0aXZlIGNvbnRyb2xzIGFyZSBub3QgbmVzdGVkIGFzIHRoZXkgYXJlIG5vdCBhbHdheXMgYW5ub3VuY2VkIGJ5IHNjcmVlbiByZWFkZXJzIG9yIGNhbiBjYXVzZSBmb2N1cyBwcm9ibGVtcyBmb3IgYXNzaXN0aXZlIHRlY2hub2xvZ2llcyIsImNhdC5rZXlib2FyZDsgd2NhZzJhOyB3Y2FnNDEyOyBUVHY1OyBUVDYuYTsgRU4tMzAxLTU0OTsgRU4tOS40LjEuMjsgUkdBQXY0OyBSR0FBLTcuMS4xIiwiU2NhbiAxIChNYWluIFBhZ2UpLCBTY2FuIDIgKEVkaXQgTW9kYWwpLCBTY2FuIDMgKFZpZXcgTW9kYWwpIiwiNTAiLCJBbGwgbWF0Y2hpbmcgZWxlbWVudHMgcGFzc2VkIiwiTi9BIiwiUGFzc2VkIHZhbGlkYXRpb24iLCJOL0EiLCJodHRwczovL2RlcXVldW5pdmVyc2l0eS5jb20vcnVsZXMvYXhlLzQuMTMvbmVzdGVkLWludGVyYWN0aXZlP2FwcGxpY2F0aW9uPXBsYXl3cmlnaHQiDQoiUGFzcyIsInBhZ2UtaGFzLWhlYWRpbmctb25lIiwiUGFzcyIsIlBhZ2Ugc2hvdWxkIGNvbnRhaW4gYSBsZXZlbC1vbmUgaGVhZGluZyIsIkVuc3VyZSB0aGF0IHRoZSBwYWdlLCBvciBhdCBsZWFzdCBvbmUgb2YgaXRzIGZyYW1lcyBjb250YWlucyBhIGxldmVsLW9uZSBoZWFkaW5nIiwiY2F0LnNlbWFudGljczsgYmVzdC1wcmFjdGljZSIsIlNjYW4gMSAoTWFpbiBQYWdlKSwgU2NhbiAyIChFZGl0IE1vZGFsKSwgU2NhbiAzIChWaWV3IE1vZGFsKSIsIjMiLCJBbGwgbWF0Y2hpbmcgZWxlbWVudHMgcGFzc2VkIiwiTi9BIiwiUGFzc2VkIHZhbGlkYXRpb24iLCJOL0EiLCJodHRwczovL2RlcXVldW5pdmVyc2l0eS5jb20vcnVsZXMvYXhlLzQuMTMvcGFnZS1oYXMtaGVhZGluZy1vbmU/YXBwbGljYXRpb249cGxheXdyaWdodCINCiJQYXNzIiwicHJlc2VudGF0aW9uLXJvbGUtY29uZmxpY3QiLCJQYXNzIiwiRWxlbWVudHMgbWFya2VkIGFzIHByZXNlbnRhdGlvbmFsIHNob3VsZCBiZSBjb25zaXN0ZW50bHkgaWdub3JlZCIsIkVuc3VyZSBlbGVtZW50cyBtYXJrZWQgYXMgcHJlc2VudGF0aW9uYWwgZG8gbm90IGhhdmUgZ2xvYmFsIEFSSUEgb3IgdGFiaW5kZXggc28gdGhhdCBhbGwgc2NyZWVuIHJlYWRlcnMgaWdub3JlIHRoZW0iLCJjYXQuYXJpYTsgYmVzdC1wcmFjdGljZTsgQUNUIiwiU2NhbiAxIChNYWluIFBhZ2UpIiwiMSIsIkFsbCBtYXRjaGluZyBlbGVtZW50cyBwYXNzZWQiLCJOL0EiLCJQYXNzZWQgdmFsaWRhdGlvbiIsIk4vQSIsImh0dHBzOi8vZGVxdWV1bml2ZXJzaXR5LmNvbS9ydWxlcy9heGUvNC4xMy9wcmVzZW50YXRpb24tcm9sZS1jb25mbGljdD9hcHBsaWNhdGlvbj1wbGF5d3JpZ2h0Ig0KIlBhc3MiLCJyZWdpb24iLCJQYXNzIiwiQWxsIHBhZ2UgY29udGVudCBzaG91bGQgYmUgY29udGFpbmVkIGJ5IGxhbmRtYXJrcyIsIkVuc3VyZSBhbGwgcGFnZSBjb250ZW50IGlzIGNvbnRhaW5lZCBieSBsYW5kbWFya3MiLCJjYXQua2V5Ym9hcmQ7IGJlc3QtcHJhY3RpY2U7IFJHQUF2NDsgUkdBQS05LjIuMSIsIlNjYW4gMSAoTWFpbiBQYWdlKSwgU2NhbiAyIChFZGl0IE1vZGFsKSwgU2NhbiAzIChWaWV3IE1vZGFsKSIsIjQxMCIsIkFsbCBtYXRjaGluZyBlbGVtZW50cyBwYXNzZWQiLCJOL0EiLCJQYXNzZWQgdmFsaWRhdGlvbiIsIk4vQSIsImh0dHBzOi8vZGVxdWV1bml2ZXJzaXR5LmNvbS9ydWxlcy9heGUvNC4xMy9yZWdpb24/YXBwbGljYXRpb249cGxheXdyaWdodCINCiJQYXNzIiwic2NvcGUtYXR0ci12YWxpZCIsIlBhc3MiLCJzY29wZSBhdHRyaWJ1dGUgc2hvdWxkIGJlIHVzZWQgY29ycmVjdGx5IiwiRW5zdXJlIHRoZSBzY29wZSBhdHRyaWJ1dGUgaXMgdXNlZCBjb3JyZWN0bHkgb24gdGFibGVzIiwiY2F0LnRhYmxlczsgYmVzdC1wcmFjdGljZSIsIlNjYW4gMSAoTWFpbiBQYWdlKSIsIjI0IiwiQWxsIG1hdGNoaW5nIGVsZW1lbnRzIHBhc3NlZCIsIk4vQSIsIlBhc3NlZCB2YWxpZGF0aW9uIiwiTi9BIiwiaHR0cHM6Ly9kZXF1ZXVuaXZlcnNpdHkuY29tL3J1bGVzL2F4ZS80LjEzL3Njb3BlLWF0dHItdmFsaWQ/YXBwbGljYXRpb249cGxheXdyaWdodCINCiJQYXNzIiwic2Nyb2xsYWJsZS1yZWdpb24tZm9jdXNhYmxlIiwiUGFzcyIsIlNjcm9sbGFibGUgcmVnaW9uIG11c3QgaGF2ZSBrZXlib2FyZCBhY2Nlc3MiLCJFbnN1cmUgZWxlbWVudHMgdGhhdCBoYXZlIHNjcm9sbGFibGUgY29udGVudCBhcmUgYWNjZXNzaWJsZSBieSBrZXlib2FyZCBpbiBTYWZhcmkiLCJjYXQua2V5Ym9hcmQ7IHdjYWcyYTsgd2NhZzIxMTsgd2NhZzIxMzsgVFR2NTsgVFQ0LmE7IEVOLTMwMS01NDk7IEVOLTkuMi4xLjE7IEVOLTkuMi4xLjM7IFJHQUF2NDsgUkdBQS03LjMuMiIsIlNjYW4gMSAoTWFpbiBQYWdlKSwgU2NhbiAyIChFZGl0IE1vZGFsKSwgU2NhbiAzIChWaWV3IE1vZGFsKSIsIjUiLCJBbGwgbWF0Y2hpbmcgZWxlbWVudHMgcGFzc2VkIiwiTi9BIiwiUGFzc2VkIHZhbGlkYXRpb24iLCJOL0EiLCJodHRwczovL2RlcXVldW5pdmVyc2l0eS5jb20vcnVsZXMvYXhlLzQuMTMvc2Nyb2xsYWJsZS1yZWdpb24tZm9jdXNhYmxlP2FwcGxpY2F0aW9uPXBsYXl3cmlnaHQiDQoiUGFzcyIsInNraXAtbGluayIsIlBhc3MiLCJUaGUgc2tpcC1saW5rIHRhcmdldCBzaG91bGQgZXhpc3QgYW5kIGJlIGZvY3VzYWJsZSIsIkVuc3VyZSBhbGwgc2tpcCBsaW5rcyBoYXZlIGEgZm9jdXNhYmxlIHRhcmdldCIsImNhdC5rZXlib2FyZDsgYmVzdC1wcmFjdGljZTsgUkdBQXY0OyBSR0FBLTEyLjcuMSIsIlNjYW4gMSAoTWFpbiBQYWdlKSIsIjEiLCJBbGwgbWF0Y2hpbmcgZWxlbWVudHMgcGFzc2VkIiwiTi9BIiwiUGFzc2VkIHZhbGlkYXRpb24iLCJOL0EiLCJodHRwczovL2RlcXVldW5pdmVyc2l0eS5jb20vcnVsZXMvYXhlLzQuMTMvc2tpcC1saW5rP2FwcGxpY2F0aW9uPXBsYXl3cmlnaHQiDQoiUGFzcyIsInRhYmluZGV4IiwiUGFzcyIsIkVsZW1lbnRzIHNob3VsZCBub3QgaGF2ZSB0YWJpbmRleCBncmVhdGVyIHRoYW4gemVybyIsIkVuc3VyZSB0YWJpbmRleCBhdHRyaWJ1dGUgdmFsdWVzIGFyZSBub3QgZ3JlYXRlciB0aGFuIDAiLCJjYXQua2V5Ym9hcmQ7IGJlc3QtcHJhY3RpY2UiLCJTY2FuIDEgKE1haW4gUGFnZSksIFNjYW4gMiAoRWRpdCBNb2RhbCksIFNjYW4gMyAoVmlldyBNb2RhbCkiLCIyNiIsIkFsbCBtYXRjaGluZyBlbGVtZW50cyBwYXNzZWQiLCJOL0EiLCJQYXNzZWQgdmFsaWRhdGlvbiIsIk4vQSIsImh0dHBzOi8vZGVxdWV1bml2ZXJzaXR5LmNvbS9ydWxlcy9heGUvNC4xMy90YWJpbmRleD9hcHBsaWNhdGlvbj1wbGF5d3JpZ2h0Ig0KIlBhc3MiLCJ0YWJsZS1kdXBsaWNhdGUtbmFtZSIsIlBhc3MiLCJUYWJsZXMgc2hvdWxkIG5vdCBoYXZlIHRoZSBzYW1lIHN1bW1hcnkgYW5kIGNhcHRpb24iLCJFbnN1cmUgdGhlIDxjYXB0aW9uPiBlbGVtZW50IGRvZXMgbm90IGNvbnRhaW4gdGhlIHNhbWUgdGV4dCBhcyB0aGUgc3VtbWFyeSBhdHRyaWJ1dGUiLCJjYXQudGFibGVzOyBiZXN0LXByYWN0aWNlOyBSR0FBdjQ7IFJHQUEtNS4yLjEiLCJTY2FuIDEgKE1haW4gUGFnZSkiLCI4IiwiQWxsIG1hdGNoaW5nIGVsZW1lbnRzIHBhc3NlZCIsIk4vQSIsIlBhc3NlZCB2YWxpZGF0aW9uIiwiTi9BIiwiaHR0cHM6Ly9kZXF1ZXVuaXZlcnNpdHkuY29tL3J1bGVzL2F4ZS80LjEzL3RhYmxlLWR1cGxpY2F0ZS1uYW1lP2FwcGxpY2F0aW9uPXBsYXl3cmlnaHQiDQoiUGFzcyIsInRkLWhlYWRlcnMtYXR0ciIsIlBhc3MiLCJUYWJsZSBjZWxsIGhlYWRlcnMgYXR0cmlidXRlcyBtdXN0IHJlZmVyIHRvIG90aGVyIDx0aD4gZWxlbWVudHMgaW4gdGhlIHNhbWUgdGFibGUiLCJFbnN1cmUgdGhhdCBlYWNoIGNlbGwgaW4gYSB0YWJsZSB0aGF0IHVzZXMgdGhlIGhlYWRlcnMgYXR0cmlidXRlIHJlZmVycyBvbmx5IHRvIG90aGVyIDx0aD4gZWxlbWVudHMgaW4gdGhhdCB0YWJsZSIsImNhdC50YWJsZXM7IHdjYWcyYTsgd2NhZzEzMTsgc2VjdGlvbjUwODsgc2VjdGlvbjUwOC4yMi5nOyBUVHY1OyBUVDE0LmI7IEVOLTMwMS01NDk7IEVOLTkuMS4zLjE7IFJHQUF2NDsgUkdBQS01LjcuNCIsIlNjYW4gMSAoTWFpbiBQYWdlKSIsIjgiLCJBbGwgbWF0Y2hpbmcgZWxlbWVudHMgcGFzc2VkIiwiTi9BIiwiUGFzc2VkIHZhbGlkYXRpb24iLCJOL0EiLCJodHRwczovL2RlcXVldW5pdmVyc2l0eS5jb20vcnVsZXMvYXhlLzQuMTMvdGQtaGVhZGVycy1hdHRyP2FwcGxpY2F0aW9uPXBsYXl3cmlnaHQiDQoiUGFzcyIsInRoLWhhcy1kYXRhLWNlbGxzIiwiUGFzcyIsIlRhYmxlIGhlYWRlcnMgaW4gYSBkYXRhIHRhYmxlIG11c3QgcmVmZXIgdG8gZGF0YSBjZWxscyIsIkVuc3VyZSB0aGF0IDx0aD4gZWxlbWVudHMgYW5kIGVsZW1lbnRzIHdpdGggcm9sZT1jb2x1bW5oZWFkZXIvcm93aGVhZGVyIGhhdmUgZGF0YSBjZWxscyB0aGV5IGRlc2NyaWJlIiwiY2F0LnRhYmxlczsgd2NhZzJhOyB3Y2FnMTMxOyBzZWN0aW9uNTA4OyBzZWN0aW9uNTA4LjIyLmc7IFRUdjU7IFRUMTQuYjsgRU4tMzAxLTU0OTsgRU4tOS4xLjMuMTsgUkdBQXY0OyBSR0FBLTUuNy4xIiwiU2NhbiAxIChNYWluIFBhZ2UpIiwiOCIsIkFsbCBtYXRjaGluZyBlbGVtZW50cyBwYXNzZWQiLCJOL0EiLCJQYXNzZWQgdmFsaWRhdGlvbiIsIk4vQSIsImh0dHBzOi8vZGVxdWV1bml2ZXJzaXR5LmNvbS9ydWxlcy9heGUvNC4xMy90aC1oYXMtZGF0YS1jZWxscz9hcHBsaWNhdGlvbj1wbGF5d3JpZ2h0Ig0KIlBhc3MiLCJmb3JtLWZpZWxkLW11bHRpcGxlLWxhYmVscyIsIlBhc3MiLCJGb3JtIGZpZWxkIG11c3Qgbm90IGhhdmUgbXVsdGlwbGUgbGFiZWwgZWxlbWVudHMiLCJFbnN1cmUgZm9ybSBmaWVsZCBkb2VzIG5vdCBoYXZlIG11bHRpcGxlIGxhYmVsIGVsZW1lbnRzIiwiY2F0LmZvcm1zOyB3Y2FnMmE7IHdjYWczMzI7IFRUdjU7IFRUNS5jOyBFTi0zMDEtNTQ5OyBFTi05LjMuMy4yOyBSR0FBdjQ7IFJHQUEtMTEuMi4xIiwiU2NhbiAyIChFZGl0IE1vZGFsKSwgU2NhbiAzIChWaWV3IE1vZGFsKSIsIjE2IiwiQWxsIG1hdGNoaW5nIGVsZW1lbnRzIHBhc3NlZCIsIk4vQSIsIlBhc3NlZCB2YWxpZGF0aW9uIiwiTi9BIiwiaHR0cHM6Ly9kZXF1ZXVuaXZlcnNpdHkuY29tL3J1bGVzL2F4ZS80LjEzL2Zvcm0tZmllbGQtbXVsdGlwbGUtbGFiZWxzP2FwcGxpY2F0aW9uPXBsYXl3cmlnaHQiDQoiUGFzcyIsImxhYmVsLXRpdGxlLW9ubHkiLCJQYXNzIiwiRm9ybSBlbGVtZW50cyBzaG91bGQgaGF2ZSBhIHZpc2libGUgbGFiZWwiLCJFbnN1cmUgdGhhdCBldmVyeSBmb3JtIGVsZW1lbnQgaGFzIGEgdmlzaWJsZSBsYWJlbCBhbmQgaXMgbm90IHNvbGVseSBsYWJlbGVkIHVzaW5nIGhpZGRlbiBsYWJlbHMsIG9yIHRoZSB0aXRsZSBvciBhcmlhLWRlc2NyaWJlZGJ5IGF0dHJpYnV0ZXMiLCJjYXQuZm9ybXM7IGJlc3QtcHJhY3RpY2UiLCJTY2FuIDIgKEVkaXQgTW9kYWwpLCBTY2FuIDMgKFZpZXcgTW9kYWwpIiwiMTYiLCJBbGwgbWF0Y2hpbmcgZWxlbWVudHMgcGFzc2VkIiwiTi9BIiwiUGFzc2VkIHZhbGlkYXRpb24iLCJOL0EiLCJodHRwczovL2RlcXVldW5pdmVyc2l0eS5jb20vcnVsZXMvYXhlLzQuMTMvbGFiZWwtdGl0bGUtb25seT9hcHBsaWNhdGlvbj1wbGF5d3JpZ2h0Ig0KIlBhc3MiLCJsYWJlbCIsIlBhc3MiLCJGb3JtIGVsZW1lbnRzIG11c3QgaGF2ZSBsYWJlbHMiLCJFbnN1cmUgZXZlcnkgZm9ybSBlbGVtZW50IGhhcyBhIGxhYmVsIiwiY2F0LmZvcm1zOyB3Y2FnMmE7IHdjYWc0MTI7IHNlY3Rpb241MDg7IHNlY3Rpb241MDguMjIubjsgVFR2NTsgVFQ1LmM7IEVOLTMwMS01NDk7IEVOLTkuNC4xLjI7IEFDVDsgUkdBQXY0OyBSR0FBLTExLjEuMSIsIlNjYW4gMiAoRWRpdCBNb2RhbCksIFNjYW4gMyAoVmlldyBNb2RhbCkiLCIxNiIsIkFsbCBtYXRjaGluZyBlbGVtZW50cyBwYXNzZWQiLCJOL0EiLCJQYXNzZWQgdmFsaWRhdGlvbiIsIk4vQSIsImh0dHBzOi8vZGVxdWV1bml2ZXJzaXR5LmNvbS9ydWxlcy9heGUvNC4xMy9sYWJlbD9hcHBsaWNhdGlvbj1wbGF5d3JpZ2h0Ig==">
+          <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+          Export CSV Report
+        </a>
+        <button class="btn btn-print" onclick="window.print()">
+          <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+          Print / PDF
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container">
+    <!-- Hero Card -->
+    <div class="hero-card">
+      <div class="hero-info">
+        <h1>Accessibility Audit Report</h1>
+        <div class="hero-meta">
+          <span class="meta-tag">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
+            <strong>Target:</strong> https://broken-workshop.dequelabs.com/
+          </span>
+          <span class="meta-tag">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            10/10/2026, 3:25:34 PM
+          </span>
+          <span class="meta-tag">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
+            3 Scans Included
+          </span>
+        </div>
+      </div>
+
+      <div>
+        <span class="dedup-pill">
+          <svg width="18" height="18" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+          Deduplication Active: 3 duplicates merged
+        </span>
+      </div>
+    </div>
+
+    <!-- KPI Grid -->
+    <div class="kpi-grid">
+      <div class="kpi-card border-critical">
+        <div class="kpi-label">
+          <span>Unique Violations</span>
+          <span style="color: var(--critical); font-size: 1.1rem;">⚠️</span>
+        </div>
+        <div class="kpi-num" style="color: var(--critical);">3</div>
+        <div class="kpi-desc">13 unique failing DOM elements</div>
+        <div class="impact-badges">
+          <span class="badge-pill critical">1 Critical</span>
+          <span class="badge-pill serious">2 Serious</span>
+          <span class="badge-pill moderate">0 Mod</span>
+          <span class="badge-pill minor">0 Minor</span>
+        </div>
+      </div>
+
+      <div class="kpi-card border-pass">
+        <div class="kpi-label">
+          <span>Passed Validations</span>
+          <span style="color: var(--pass); font-size: 1.1rem;">✓</span>
+        </div>
+        <div class="kpi-num" style="color: var(--pass);">49</div>
+        <div class="kpi-desc">WCAG guidelines satisfied across scans</div>
+      </div>
+
+      <div class="kpi-card border-primary">
+        <div class="kpi-label">
+          <span>Compliance Score</span>
+          <span style="color: var(--primary); font-size: 1.1rem;">🎯</span>
+        </div>
+        <div class="kpi-num" style="color: var(--primary);">94%</div>
+        <div class="kpi-desc">49 of 52 evaluated rules passed</div>
+      </div>
+
+      <div class="kpi-card border-info">
+        <div class="kpi-label">
+          <span>Multi-State Scans</span>
+          <span style="color: #0284c7; font-size: 1.1rem;">📑</span>
+        </div>
+        <div class="kpi-num" style="color: #0284c7;">3</div>
+        <div class="kpi-desc">3 duplicate instances eliminated</div>
+      </div>
+    </div>
+
+    <!-- Toolbar Filters -->
+    <div class="filter-bar">
+      <div class="tab-pills">
+        <button class="tab-btn active" data-filter="all">All (52)</button>
+        <button class="tab-btn" data-filter="violations">Violations (3)</button>
+        <button class="tab-btn" data-filter="passes">Passed (49)</button>
+        <button class="tab-btn" data-filter="critical">Critical (1)</button>
+        <button class="tab-btn" data-filter="serious">Serious (2)</button>
+        <button class="tab-btn" data-filter="moderate">Moderate (0)</button>
+        <button class="tab-btn" data-filter="minor">Minor (0)</button>
+      </div>
+
+      <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+        <div class="search-input-wrap">
+          <svg class="search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+          <input type="text" id="searchInput" class="search-input" placeholder="Search rules, selectors, tags...">
+        </div>
+
+        <select id="scanSelect" class="select-scan">
+          <option value="all">All Scans</option>
+          <option value="Scan 1 (Main Page)">Scan 1 (Main Page)</option><option value="Scan 2 (Edit Modal)">Scan 2 (Edit Modal)</option><option value="Scan 3 (View Modal)">Scan 3 (View Modal)</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Violations Section -->
+    <div id="violationsSection">
+      <div class="section-header">
+        <div class="section-title">
+          <span>Accessibility Violations</span>
+          <span class="count-badge">3 unique rules</span>
+          <button class="btn btn-print" style="padding: 4px 10px; font-size: 0.75rem; margin-left: 10px;" onclick="window.toggleAllCards()">Toggle All Cards</button>
+        </div>
+      </div>
+
+      <div class="cards-stack">
+        
+          <div class="violation-card open" data-impact="serious" data-scans="Scan 1 (Main Page),Scan 2 (Edit Modal),Scan 3 (View Modal)" data-search="color-contrast Elements must meet minimum color contrast ratio thresholds Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds cat.color wcag2aa wcag143 TTv5 TT13.c EN-301-549 EN-9.1.4.3 ACT RGAAv4 RGAA-3.2.1 div[data-testid="chocolate-cake"] > .Recipes__card-content > table > tbody > tr:nth-child(3) > .Beginner div[data-testid="moms-spaghetti"] > .Recipes__card-content > table > tbody > tr:nth-child(3) > .Beginner div[data-testid="chocolate-cake"] > .Recipes__card-content > table > tbody > tr:nth-child(3) > .Beginner div[data-testid="moms-spaghetti"] > .Recipes__card-content > table > tbody > tr:nth-child(3) > .Beginner">
+            <div class="card-top" onclick="window.toggleCard(this)">
+              <div style="flex: 1;">
+                <div class="rule-title-line">
+                  <span class="impact-chip serious">serious</span>
+                  <span class="rule-code">color-contrast</span>
+                  <span class="elem-count-pill">4 elements</span>
+                  <span class="scan-pill">Scan 1 (Main Page)</span><span class="scan-pill">Scan 2 (Edit Modal)</span><span class="scan-pill">Scan 3 (View Modal)</span>
+                </div>
+                <div class="rule-headline">Elements must meet minimum color contrast ratio thresholds</div>
+                <div class="rule-desc">Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds</div>
+                <div class="tags-row">
+                  <span class="wcag-chip">cat.color</span><span class="wcag-chip">wcag2aa</span><span class="wcag-chip">wcag143</span><span class="wcag-chip">TTv5</span><span class="wcag-chip">TT13.c</span><span class="wcag-chip">EN-301-549</span><span class="wcag-chip">EN-9.1.4.3</span><span class="wcag-chip">ACT</span><span class="wcag-chip">RGAAv4</span><span class="wcag-chip">RGAA-3.2.1</span>
+                </div>
+              </div>
+
+              <div class="card-actions">
+                <a href="https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=playwright" target="_blank" rel="noopener" class="docs-btn" onclick="event.stopPropagation()">Axe Docs &rarr;</a>
+                <svg class="arrow-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+              </div>
+            </div>
+
+            <div class="card-details">
+              
+                <div class="node-item">
+                  <div class="node-top-bar">
+                    <div>
+                      <span class="selector-code">div[data-testid="chocolate-cake"] > .Recipes__card-content > table > tbody > tr:nth-child(3) > .Beginner</span>
+                    </div>
+                    <div style="display: flex; gap: 6px; align-items: center;">
+                      
+                      <span class="scan-pill">Scan 1 (Main Page)</span>
+                    </div>
+                  </div>
+
+                  <div class="html-box">&lt;td class=&quot;Beginner&quot;&gt;Beginner&lt;/td&gt;</div>
+                  <div class="remediation-box">Fix any of the following:<br>  Element has insufficient color contrast of 2.17 (foreground color: #76bf98, background color: #ffffff, font size: 13.5pt (18px), font weight: normal). Expected contrast ratio of 4.5:1</div>
+
+                  
+                    <div class="screenshot-card">
+                      <div class="screenshot-header">
+                        <span style="display: inline-flex; align-items: center; gap: 6px;">
+                          📷 <strong>Marked Violation Snapshot</strong>
+                        </span>
+                        <span class="screenshot-highlight-tag">
+                          <span>🔴</span> Violated element marked in red
+                        </span>
+                      </div>
+                      <div class="screenshot-img-wrap" onclick="openLightbox('screenshots/scan-1-main-page-color-contrast-node1.png')" title="Click to view full size">
+                        <img src="screenshots/scan-1-main-page-color-contrast-node1.png" alt="Marked Accessibility Violation" class="screenshot-img" loading="lazy">
+                      </div>
+                    </div>
+                  
+                </div>
+              
+                <div class="node-item">
+                  <div class="node-top-bar">
+                    <div>
+                      <span class="selector-code">div[data-testid="moms-spaghetti"] > .Recipes__card-content > table > tbody > tr:nth-child(3) > .Beginner</span>
+                    </div>
+                    <div style="display: flex; gap: 6px; align-items: center;">
+                      
+                      <span class="scan-pill">Scan 1 (Main Page)</span>
+                    </div>
+                  </div>
+
+                  <div class="html-box">&lt;td class=&quot;Beginner&quot;&gt;Beginner&lt;/td&gt;</div>
+                  <div class="remediation-box">Fix any of the following:<br>  Element has insufficient color contrast of 2.17 (foreground color: #76bf98, background color: #ffffff, font size: 13.5pt (18px), font weight: normal). Expected contrast ratio of 4.5:1</div>
+
+                  
+                    <div class="screenshot-card">
+                      <div class="screenshot-header">
+                        <span style="display: inline-flex; align-items: center; gap: 6px;">
+                          📷 <strong>Marked Violation Snapshot</strong>
+                        </span>
+                        <span class="screenshot-highlight-tag">
+                          <span>🔴</span> Violated element marked in red
+                        </span>
+                      </div>
+                      <div class="screenshot-img-wrap" onclick="openLightbox('screenshots/scan-1-main-page-color-contrast-node2.png')" title="Click to view full size">
+                        <img src="screenshots/scan-1-main-page-color-contrast-node2.png" alt="Marked Accessibility Violation" class="screenshot-img" loading="lazy">
+                      </div>
+                    </div>
+                  
+                </div>
+              
+                <div class="node-item">
+                  <div class="node-top-bar">
+                    <div>
+                      <span class="selector-code">div[data-testid="chocolate-cake"] > .Recipes__card-content > table > tbody > tr:nth-child(3) > .Beginner</span>
+                    </div>
+                    <div style="display: flex; gap: 6px; align-items: center;">
+                      <span class="dedup-tag">Seen in 2 scans</span>
+                      <span class="scan-pill">Scan 2 (Edit Modal)</span><span class="scan-pill">Scan 3 (View Modal)</span>
+                    </div>
+                  </div>
+
+                  <div class="html-box">&lt;td class=&quot;Beginner&quot; style=&quot;outline-offset: 3px !important;&quot;&gt;Beginner&lt;/td&gt;</div>
+                  <div class="remediation-box">Fix any of the following:<br>  Element has insufficient color contrast of 2.17 (foreground color: #76bf98, background color: #ffffff, font size: 13.5pt (18px), font weight: normal). Expected contrast ratio of 4.5:1</div>
+
+                  
+                    <div class="screenshot-card">
+                      <div class="screenshot-header">
+                        <span style="display: inline-flex; align-items: center; gap: 6px;">
+                          📷 <strong>Marked Violation Snapshot</strong>
+                        </span>
+                        <span class="screenshot-highlight-tag">
+                          <span>🔴</span> Violated element marked in red
+                        </span>
+                      </div>
+                      <div class="screenshot-img-wrap" onclick="openLightbox('screenshots/scan-2-edit-modal-color-contrast-node1.png')" title="Click to view full size">
+                        <img src="screenshots/scan-2-edit-modal-color-contrast-node1.png" alt="Marked Accessibility Violation" class="screenshot-img" loading="lazy">
+                      </div>
+                    </div>
+                  
+                </div>
+              
+                <div class="node-item">
+                  <div class="node-top-bar">
+                    <div>
+                      <span class="selector-code">div[data-testid="moms-spaghetti"] > .Recipes__card-content > table > tbody > tr:nth-child(3) > .Beginner</span>
+                    </div>
+                    <div style="display: flex; gap: 6px; align-items: center;">
+                      <span class="dedup-tag">Seen in 2 scans</span>
+                      <span class="scan-pill">Scan 2 (Edit Modal)</span><span class="scan-pill">Scan 3 (View Modal)</span>
+                    </div>
+                  </div>
+
+                  <div class="html-box">&lt;td class=&quot;Beginner&quot; style=&quot;outline-offset: 3px !important;&quot;&gt;Beginner&lt;/td&gt;</div>
+                  <div class="remediation-box">Fix any of the following:<br>  Element has insufficient color contrast of 2.17 (foreground color: #76bf98, background color: #ffffff, font size: 13.5pt (18px), font weight: normal). Expected contrast ratio of 4.5:1</div>
+
+                  
+                    <div class="screenshot-card">
+                      <div class="screenshot-header">
+                        <span style="display: inline-flex; align-items: center; gap: 6px;">
+                          📷 <strong>Marked Violation Snapshot</strong>
+                        </span>
+                        <span class="screenshot-highlight-tag">
+                          <span>🔴</span> Violated element marked in red
+                        </span>
+                      </div>
+                      <div class="screenshot-img-wrap" onclick="openLightbox('screenshots/scan-2-edit-modal-color-contrast-node2.png')" title="Click to view full size">
+                        <img src="screenshots/scan-2-edit-modal-color-contrast-node2.png" alt="Marked Accessibility Violation" class="screenshot-img" loading="lazy">
+                      </div>
+                    </div>
+                  
+                </div>
+              
+            </div>
+          </div>
+        
+          <div class="violation-card open" data-impact="critical" data-scans="Scan 1 (Main Page)" data-search="image-alt Images must have alternative text Ensure <img> elements have alternative text or a role of none or presentation cat.text-alternatives wcag2a wcag111 section508 section508.22.a TTv5 TT7.a TT7.b EN-301-549 EN-9.1.1.1 ACT RGAAv4 RGAA-1.1.1 img[src$="cake.png"] img[src$="spaget.png"] img[src$="steak.png"] img[src$="burger.png"] img[src$="grilled_cheese.png"] img[src$="lemon_bar.png"] img[src$="kale_salad.png"] img[src$="trail_mix.png"]">
+            <div class="card-top" onclick="window.toggleCard(this)">
+              <div style="flex: 1;">
+                <div class="rule-title-line">
+                  <span class="impact-chip critical">critical</span>
+                  <span class="rule-code">image-alt</span>
+                  <span class="elem-count-pill">8 elements</span>
+                  <span class="scan-pill">Scan 1 (Main Page)</span>
+                </div>
+                <div class="rule-headline">Images must have alternative text</div>
+                <div class="rule-desc">Ensure <img> elements have alternative text or a role of none or presentation</div>
+                <div class="tags-row">
+                  <span class="wcag-chip">cat.text-alternatives</span><span class="wcag-chip">wcag2a</span><span class="wcag-chip">wcag111</span><span class="wcag-chip">section508</span><span class="wcag-chip">section508.22.a</span><span class="wcag-chip">TTv5</span><span class="wcag-chip">TT7.a</span><span class="wcag-chip">TT7.b</span><span class="wcag-chip">EN-301-549</span><span class="wcag-chip">EN-9.1.1.1</span><span class="wcag-chip">ACT</span><span class="wcag-chip">RGAAv4</span><span class="wcag-chip">RGAA-1.1.1</span>
+                </div>
+              </div>
+
+              <div class="card-actions">
+                <a href="https://dequeuniversity.com/rules/axe/4.13/image-alt?application=playwright" target="_blank" rel="noopener" class="docs-btn" onclick="event.stopPropagation()">Axe Docs &rarr;</a>
+                <svg class="arrow-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+              </div>
+            </div>
+
+            <div class="card-details">
+              
+                <div class="node-item">
+                  <div class="node-top-bar">
+                    <div>
+                      <span class="selector-code">img[src$="cake.png"]</span>
+                    </div>
+                    <div style="display: flex; gap: 6px; align-items: center;">
+                      
+                      <span class="scan-pill">Scan 1 (Main Page)</span>
+                    </div>
+                  </div>
+
+                  <div class="html-box">&lt;img src=&quot;/food/cake.png&quot; class=&quot;Recipe__image&quot;&gt;</div>
+                  <div class="remediation-box">Fix any of the following:<br>  Element does not have an alt attribute<br>  aria-label attribute does not exist or is empty<br>  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty<br>  Element has no title attribute<br>  Element&#039;s default semantics were not overridden with role=&quot;none&quot; or role=&quot;presentation&quot;</div>
+
+                  
+                    <div class="screenshot-card">
+                      <div class="screenshot-header">
+                        <span style="display: inline-flex; align-items: center; gap: 6px;">
+                          📷 <strong>Marked Violation Snapshot</strong>
+                        </span>
+                        <span class="screenshot-highlight-tag">
+                          <span>🔴</span> Violated element marked in red
+                        </span>
+                      </div>
+                      <div class="screenshot-img-wrap" onclick="openLightbox('screenshots/scan-1-main-page-image-alt-node1.png')" title="Click to view full size">
+                        <img src="screenshots/scan-1-main-page-image-alt-node1.png" alt="Marked Accessibility Violation" class="screenshot-img" loading="lazy">
+                      </div>
+                    </div>
+                  
+                </div>
+              
+                <div class="node-item">
+                  <div class="node-top-bar">
+                    <div>
+                      <span class="selector-code">img[src$="spaget.png"]</span>
+                    </div>
+                    <div style="display: flex; gap: 6px; align-items: center;">
+                      
+                      <span class="scan-pill">Scan 1 (Main Page)</span>
+                    </div>
+                  </div>
+
+                  <div class="html-box">&lt;img src=&quot;/food/spaget.png&quot; class=&quot;Recipe__image&quot;&gt;</div>
+                  <div class="remediation-box">Fix any of the following:<br>  Element does not have an alt attribute<br>  aria-label attribute does not exist or is empty<br>  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty<br>  Element has no title attribute<br>  Element&#039;s default semantics were not overridden with role=&quot;none&quot; or role=&quot;presentation&quot;</div>
+
+                  
+                    <div class="screenshot-card">
+                      <div class="screenshot-header">
+                        <span style="display: inline-flex; align-items: center; gap: 6px;">
+                          📷 <strong>Marked Violation Snapshot</strong>
+                        </span>
+                        <span class="screenshot-highlight-tag">
+                          <span>🔴</span> Violated element marked in red
+                        </span>
+                      </div>
+                      <div class="screenshot-img-wrap" onclick="openLightbox('screenshots/scan-1-main-page-image-alt-node2.png')" title="Click to view full size">
+                        <img src="screenshots/scan-1-main-page-image-alt-node2.png" alt="Marked Accessibility Violation" class="screenshot-img" loading="lazy">
+                      </div>
+                    </div>
+                  
+                </div>
+              
+                <div class="node-item">
+                  <div class="node-top-bar">
+                    <div>
+                      <span class="selector-code">img[src$="steak.png"]</span>
+                    </div>
+                    <div style="display: flex; gap: 6px; align-items: center;">
+                      
+                      <span class="scan-pill">Scan 1 (Main Page)</span>
+                    </div>
+                  </div>
+
+                  <div class="html-box">&lt;img src=&quot;/food/steak.png&quot; class=&quot;Recipe__image&quot;&gt;</div>
+                  <div class="remediation-box">Fix any of the following:<br>  Element does not have an alt attribute<br>  aria-label attribute does not exist or is empty<br>  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty<br>  Element has no title attribute<br>  Element&#039;s default semantics were not overridden with role=&quot;none&quot; or role=&quot;presentation&quot;</div>
+
+                  
+                    <div class="screenshot-card">
+                      <div class="screenshot-header">
+                        <span style="display: inline-flex; align-items: center; gap: 6px;">
+                          📷 <strong>Marked Violation Snapshot</strong>
+                        </span>
+                        <span class="screenshot-highlight-tag">
+                          <span>🔴</span> Violated element marked in red
+                        </span>
+                      </div>
+                      <div class="screenshot-img-wrap" onclick="openLightbox('screenshots/scan-1-main-page-image-alt-node3.png')" title="Click to view full size">
+                        <img src="screenshots/scan-1-main-page-image-alt-node3.png" alt="Marked Accessibility Violation" class="screenshot-img" loading="lazy">
+                      </div>
+                    </div>
+                  
+                </div>
+              
+                <div class="node-item">
+                  <div class="node-top-bar">
+                    <div>
+                      <span class="selector-code">img[src$="burger.png"]</span>
+                    </div>
+                    <div style="display: flex; gap: 6px; align-items: center;">
+                      
+                      <span class="scan-pill">Scan 1 (Main Page)</span>
+                    </div>
+                  </div>
+
+                  <div class="html-box">&lt;img src=&quot;/food/burger.png&quot; class=&quot;Recipe__image&quot;&gt;</div>
+                  <div class="remediation-box">Fix any of the following:<br>  Element does not have an alt attribute<br>  aria-label attribute does not exist or is empty<br>  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty<br>  Element has no title attribute<br>  Element&#039;s default semantics were not overridden with role=&quot;none&quot; or role=&quot;presentation&quot;</div>
+
+                  
+                    <div class="screenshot-card">
+                      <div class="screenshot-header">
+                        <span style="display: inline-flex; align-items: center; gap: 6px;">
+                          📷 <strong>Marked Violation Snapshot</strong>
+                        </span>
+                        <span class="screenshot-highlight-tag">
+                          <span>🔴</span> Violated element marked in red
+                        </span>
+                      </div>
+                      <div class="screenshot-img-wrap" onclick="openLightbox('screenshots/scan-1-main-page-image-alt-node4.png')" title="Click to view full size">
+                        <img src="screenshots/scan-1-main-page-image-alt-node4.png" alt="Marked Accessibility Violation" class="screenshot-img" loading="lazy">
+                      </div>
+                    </div>
+                  
+                </div>
+              
+                <div class="node-item">
+                  <div class="node-top-bar">
+                    <div>
+                      <span class="selector-code">img[src$="grilled_cheese.png"]</span>
+                    </div>
+                    <div style="display: flex; gap: 6px; align-items: center;">
+                      
+                      <span class="scan-pill">Scan 1 (Main Page)</span>
+                    </div>
+                  </div>
+
+                  <div class="html-box">&lt;img src=&quot;/food/grilled_cheese.png&quot; class=&quot;Recipe__image&quot;&gt;</div>
+                  <div class="remediation-box">Fix any of the following:<br>  Element does not have an alt attribute<br>  aria-label attribute does not exist or is empty<br>  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty<br>  Element has no title attribute<br>  Element&#039;s default semantics were not overridden with role=&quot;none&quot; or role=&quot;presentation&quot;</div>
+
+                  
+                    <div class="screenshot-card">
+                      <div class="screenshot-header">
+                        <span style="display: inline-flex; align-items: center; gap: 6px;">
+                          📷 <strong>Marked Violation Snapshot</strong>
+                        </span>
+                        <span class="screenshot-highlight-tag">
+                          <span>🔴</span> Violated element marked in red
+                        </span>
+                      </div>
+                      <div class="screenshot-img-wrap" onclick="openLightbox('screenshots/scan-1-main-page-image-alt-node5.png')" title="Click to view full size">
+                        <img src="screenshots/scan-1-main-page-image-alt-node5.png" alt="Marked Accessibility Violation" class="screenshot-img" loading="lazy">
+                      </div>
+                    </div>
+                  
+                </div>
+              
+                <div class="node-item">
+                  <div class="node-top-bar">
+                    <div>
+                      <span class="selector-code">img[src$="lemon_bar.png"]</span>
+                    </div>
+                    <div style="display: flex; gap: 6px; align-items: center;">
+                      
+                      <span class="scan-pill">Scan 1 (Main Page)</span>
+                    </div>
+                  </div>
+
+                  <div class="html-box">&lt;img src=&quot;/food/lemon_bar.png&quot; class=&quot;Recipe__image&quot;&gt;</div>
+                  <div class="remediation-box">Fix any of the following:<br>  Element does not have an alt attribute<br>  aria-label attribute does not exist or is empty<br>  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty<br>  Element has no title attribute<br>  Element&#039;s default semantics were not overridden with role=&quot;none&quot; or role=&quot;presentation&quot;</div>
+
+                  
+                    <div class="screenshot-card">
+                      <div class="screenshot-header">
+                        <span style="display: inline-flex; align-items: center; gap: 6px;">
+                          📷 <strong>Marked Violation Snapshot</strong>
+                        </span>
+                        <span class="screenshot-highlight-tag">
+                          <span>🔴</span> Violated element marked in red
+                        </span>
+                      </div>
+                      <div class="screenshot-img-wrap" onclick="openLightbox('screenshots/scan-1-main-page-image-alt-node6.png')" title="Click to view full size">
+                        <img src="screenshots/scan-1-main-page-image-alt-node6.png" alt="Marked Accessibility Violation" class="screenshot-img" loading="lazy">
+                      </div>
+                    </div>
+                  
+                </div>
+              
+                <div class="node-item">
+                  <div class="node-top-bar">
+                    <div>
+                      <span class="selector-code">img[src$="kale_salad.png"]</span>
+                    </div>
+                    <div style="display: flex; gap: 6px; align-items: center;">
+                      
+                      <span class="scan-pill">Scan 1 (Main Page)</span>
+                    </div>
+                  </div>
+
+                  <div class="html-box">&lt;img src=&quot;/food/kale_salad.png&quot; class=&quot;Recipe__image&quot;&gt;</div>
+                  <div class="remediation-box">Fix any of the following:<br>  Element does not have an alt attribute<br>  aria-label attribute does not exist or is empty<br>  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty<br>  Element has no title attribute<br>  Element&#039;s default semantics were not overridden with role=&quot;none&quot; or role=&quot;presentation&quot;</div>
+
+                  
+                    <div class="screenshot-card">
+                      <div class="screenshot-header">
+                        <span style="display: inline-flex; align-items: center; gap: 6px;">
+                          📷 <strong>Marked Violation Snapshot</strong>
+                        </span>
+                        <span class="screenshot-highlight-tag">
+                          <span>🔴</span> Violated element marked in red
+                        </span>
+                      </div>
+                      <div class="screenshot-img-wrap" onclick="openLightbox('screenshots/scan-1-main-page-image-alt-node7.png')" title="Click to view full size">
+                        <img src="screenshots/scan-1-main-page-image-alt-node7.png" alt="Marked Accessibility Violation" class="screenshot-img" loading="lazy">
+                      </div>
+                    </div>
+                  
+                </div>
+              
+                <div class="node-item">
+                  <div class="node-top-bar">
+                    <div>
+                      <span class="selector-code">img[src$="trail_mix.png"]</span>
+                    </div>
+                    <div style="display: flex; gap: 6px; align-items: center;">
+                      
+                      <span class="scan-pill">Scan 1 (Main Page)</span>
+                    </div>
+                  </div>
+
+                  <div class="html-box">&lt;img src=&quot;/food/trail_mix.png&quot; class=&quot;Recipe__image&quot;&gt;</div>
+                  <div class="remediation-box">Fix any of the following:<br>  Element does not have an alt attribute<br>  aria-label attribute does not exist or is empty<br>  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty<br>  Element has no title attribute<br>  Element&#039;s default semantics were not overridden with role=&quot;none&quot; or role=&quot;presentation&quot;</div>
+
+                  
+                    <div class="screenshot-card">
+                      <div class="screenshot-header">
+                        <span style="display: inline-flex; align-items: center; gap: 6px;">
+                          📷 <strong>Marked Violation Snapshot</strong>
+                        </span>
+                        <span class="screenshot-highlight-tag">
+                          <span>🔴</span> Violated element marked in red
+                        </span>
+                      </div>
+                      <div class="screenshot-img-wrap" onclick="openLightbox('screenshots/scan-1-main-page-image-alt-node8.png')" title="Click to view full size">
+                        <img src="screenshots/scan-1-main-page-image-alt-node8.png" alt="Marked Accessibility Violation" class="screenshot-img" loading="lazy">
+                      </div>
+                    </div>
+                  
+                </div>
+              
+            </div>
+          </div>
+        
+          <div class="violation-card open" data-impact="serious" data-scans="Scan 2 (Edit Modal),Scan 3 (View Modal)" data-search="aria-dialog-name ARIA dialog and alertdialog nodes should have an accessible name Ensure every ARIA dialog and alertdialog node has an accessible name cat.aria best-practice .dqpl-modal">
+            <div class="card-top" onclick="window.toggleCard(this)">
+              <div style="flex: 1;">
+                <div class="rule-title-line">
+                  <span class="impact-chip serious">serious</span>
+                  <span class="rule-code">aria-dialog-name</span>
+                  <span class="elem-count-pill">1 element</span>
+                  <span class="scan-pill">Scan 2 (Edit Modal)</span><span class="scan-pill">Scan 3 (View Modal)</span>
+                </div>
+                <div class="rule-headline">ARIA dialog and alertdialog nodes should have an accessible name</div>
+                <div class="rule-desc">Ensure every ARIA dialog and alertdialog node has an accessible name</div>
+                <div class="tags-row">
+                  <span class="wcag-chip">cat.aria</span><span class="wcag-chip">best-practice</span>
+                </div>
+              </div>
+
+              <div class="card-actions">
+                <a href="https://dequeuniversity.com/rules/axe/4.13/aria-dialog-name?application=playwright" target="_blank" rel="noopener" class="docs-btn" onclick="event.stopPropagation()">Axe Docs &rarr;</a>
+                <svg class="arrow-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+              </div>
+            </div>
+
+            <div class="card-details">
+              
+                <div class="node-item">
+                  <div class="node-top-bar">
+                    <div>
+                      <span class="selector-code">.dqpl-modal</span>
+                    </div>
+                    <div style="display: flex; gap: 6px; align-items: center;">
+                      <span class="dedup-tag">Seen in 2 scans</span>
+                      <span class="scan-pill">Scan 2 (Edit Modal)</span><span class="scan-pill">Scan 3 (View Modal)</span>
+                    </div>
+                  </div>
+
+                  <div class="html-box">&lt;div role=&quot;dialog&quot; class=&quot;dqpl-modal RecipeModal dqpl-dialog-show&quot;&gt;</div>
+                  <div class="remediation-box">Fix any of the following:<br>  aria-label attribute does not exist or is empty<br>  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty<br>  Element has no title attribute</div>
+
+                  
+                </div>
+              
+            </div>
+          </div>
+        
+      </div>
+    </div>
+
+    <!-- Passed Section -->
+    <div id="passesSection" style="margin-top: 48px;">
+      <div class="section-header">
+        <div class="section-title">
+          <span>Passed Validations</span>
+          <span class="count-badge" style="background: var(--pass-bg); color: var(--pass);">49 passed</span>
+        </div>
+      </div>
+
+      <div class="cards-stack">
+        
+          <div class="pass-row" data-scans="Scan 1 (Main Page),Scan 2 (Edit Modal),Scan 3 (View Modal)" data-search="aria-allowed-attr Elements must only use supported ARIA attributes Ensure an element's role supports its ARIA attributes cat.aria wcag2a wcag412 EN-301-549 EN-9.4.1.2 RGAAv4 RGAA-7.1.1">
+            <div style="flex: 1;">
+              <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 4px; flex-wrap: wrap;">
+                <span class="pass-badge">PASS</span>
+                <span class="rule-code" style="color: #15803d;">aria-allowed-attr</span>
+                <span class="scan-pill">Scan 1 (Main Page)</span><span class="scan-pill">Scan 2 (Edit Modal)</span><span class="scan-pill">Scan 3 (View Modal)</span>
+              </div>
+              <div style="font-weight: 600; color: var(--text-heading); font-size: 0.95rem;">Elements must only use supported ARIA attributes</div>
+              <div style="font-size: 0.85rem; color: var(--text-muted);">Ensure an element's role supports its ARIA attributes</div>
+              <div class="tags-row" style="margin-top: 8px;">
+                <span class="wcag-chip">cat.aria</span><span class="wcag-chip">wcag2a</span><span class="wcag-chip">wcag412</span><span class="wcag-chip">EN-301-549</span><span class="wcag-chip">EN-9.4.1.2</span><span class="wcag-chip">RGAAv4</span><span class="wcag-chip">RGAA-7.1.1</span>
+              </div>
+            </div>
+
+            <a href="https://dequeuniversity.com/rules/axe/4.13/aria-allowed-attr?application=playwright" target="_blank" rel="noopener" class="docs-btn">Docs &rarr;</a>
+          </div>
+        
+          <div class="pass-row" data-scans="Scan 1 (Main Page),Scan 2 (Edit Modal),Scan 3 (View Modal)" data-search="aria-allowed-role ARIA role should be appropriate for the element Ensure role attribute has an appropriate value for the element cat.aria best-practice">
+            <div style="flex: 1;">
+              <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 4px; flex-wrap: wrap;">
+                <span class="pass-badge">PASS</span>
+                <span class="rule-code" style="color: #15803d;">aria-allowed-role</span>
+                <span class="scan-pill">Scan 1 (Main Page)</span><span class="scan-pill">Scan 2 (Edit Modal)</span><span class="scan-pill">Scan 3 (View Modal)</span>
+              </div>
+              <div style="font-weight: 600; color: var(--text-heading); font-size: 0.95rem;">ARIA role should be appropriate for the element</div>
+              <div style="font-size: 0.85rem; color: var(--text-muted);">Ensure role attribute has an appropriate value for the element</div>
+              <div class="tags-row" style="margin-top: 8px;">
+                <span class="wcag-chip">cat.aria</span><span class="wcag-chip">best-practice</span>
+              </div>
+            </div>
+
+            <a href="https://dequeuniversity.com/rules/axe/4.13/aria-allowed-role?application=playwright" target="_blank" rel="noopener" class="docs-btn">Docs &rarr;</a>
+          </div>
+        
+          <div class="pass-row" data-scans="Scan 1 (Main Page)" data-search="aria-command-name ARIA commands must have an accessible name Ensure every ARIA button, link and menuitem has an accessible name cat.aria wcag2a wcag412 TTv5 TT6.a EN-301-549 EN-9.4.1.2 ACT RGAAv4 RGAA-11.9.1">
+            <div style="flex: 1;">
+              <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 4px; flex-wrap: wrap;">
+                <span class="pass-badge">PASS</span>
+                <span class="rule-code" style="color: #15803d;">aria-command-name</span>
+                <span class="scan-pill">Scan 1 (Main Page)</span>
+              </div>
+              <div style="font-weight: 600; color: var(--text-heading); font-size: 0.95rem;">ARIA commands must have an accessible name</div>
+              <div style="font-size: 0.85rem; color: var(--text-muted);">Ensure every ARIA button, link and menuitem has an accessible name</div>
+              <div class="tags-row" style="margin-top: 8px;">
+                <span class="wcag-chip">cat.aria</span><span class="wcag-chip">wcag2a</span><span class="wcag-chip">wcag412</span><span class="wcag-chip">TTv5</span><span class="wcag-chip">TT6.a</span><span class="wcag-chip">EN-301-549</span><span class="wcag-chip">EN-9.4.1.2</span><span class="wcag-chip">ACT</span><span class="wcag-chip">RGAAv4</span><span class="wcag-chip">RGAA-11.9.1</span>
+              </div>
+            </div>
+
+            <a href="https://dequeuniversity.com/rules/axe/4.13/aria-command-name?application=playwright" target="_blank" rel="noopener" class="docs-btn">Docs &rarr;</a>
+          </div>
+        
+          <div class="pass-row" data-scans="Scan 1 (Main Page),Scan 2 (Edit Modal),Scan 3 (View Modal)" data-search="aria-conditional-attr ARIA attributes must be used as specified for the element's role Ensure ARIA attributes are used as described in the specification of the element's role cat.aria wcag2a wcag412 EN-301-549 EN-9.4.1.2 RGAAv4 RGAA-7.1.1">
+            <div style="flex: 1;">
+              <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 4px; flex-wrap: wrap;">
+                <span class="pass-badge">PASS</span>
+                <span class="rule-code" style="color: #15803d;">aria-conditional-attr</span>
+                <span class="scan-pill">Scan 1 (Main Page)</span><span class="scan-pill">Scan 2 (Edit Modal)</span><span class="scan-pill">Scan 3 (View Modal)</span>
+              </div>
+              <div style="font-weight: 600; color: var(--text-heading); font-size: 0.95rem;">ARIA attributes must be used as specified for the element's role</div>
+              <div style="font-size: 0.85rem; color: var(--text-muted);">Ensure ARIA attributes are used as described in the specification of the element's role</div>
+              <div class="tags-row" style="margin-top: 8px;">
+                <span class="wcag-chip">cat.aria</span><span class="wcag-chip">wcag2a</span><span class="wcag-chip">wcag412</span><span class="wcag-chip">EN-301-549</span><span class="wcag-chip">EN-9.4.1.2</span><span class="wcag-chip">RGAAv4</span><span class="wcag-chip">RGAA-7.1.1</span>
+              </div>
+            </div>
+
+            <a href="https://dequeuniversity.com/rules/axe/4.13/aria-conditional-attr?application=playwright" target="_blank" rel="noopener" class="docs-btn">Docs &rarr;</a>
+          </div>
+        
+          <div class="pass-row" data-scans="Scan 1 (Main Page),Scan 2 (Edit Modal),Scan 3 (View Modal)" data-search="aria-deprecated-role Deprecated ARIA roles must not be used Ensure elements do not use deprecated roles cat.aria wcag2a wcag412 EN-301-549 EN-9.4.1.2 RGAAv4 RGAA-7.1.1">
+            <div style="flex: 1;">
+              <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 4px; flex-wrap: wrap;">
+                <span class="pass-badge">PASS</span>
+                <span class="rule-code" style="color: #15803d;">aria-deprecated-role</span>
+                <span class="scan-pill">Scan 1 (Main Page)</span><span class="scan-pill">Scan 2 (Edit Modal)</span><span class="scan-pill">Scan 3 (View Modal)</span>
+              </div>
+              <div style="font-weight: 600; color: var(--text-heading); font-size: 0.95rem;">Deprecated ARIA roles must not be used</div>
+              <div style="font-size: 0.85rem; color: var(--text-muted);">Ensure elements do not use deprecated roles</div>
+              <div class="tags-row" style="margin-top: 8px;">
+                <span class="wcag-chip">cat.aria</span><span class="wcag-chip">wcag2a</span><span class="wcag-chip">wcag412</span><span class="wcag-chip">EN-301-549</span><span class="wcag-chip">EN-9.4.1.2</span><span class="wcag-chip">RGAAv4</span><span class="wcag-chip">RGAA-7.1.1</span>
+              </div>
+            </div>
+
+            <a href="https://dequeuniversity.com/rules/axe/4.13/aria-deprecated-role?application=playwright" target="_blank" rel="noopener" class="docs-btn">Docs &rarr;</a>
+          </div>
+        
+          <div class="pass-row" data-scans="Scan 1 (Main Page),Scan 2 (Edit Modal),Scan 3 (View Modal)" data-search="aria-hidden-body aria-hidden="true" must not be present on the document body Ensure aria-hidden="true" is not present on the document body. cat.aria wcag2a wcag131 wcag412 EN-301-549 EN-9.1.3.1 EN-9.4.1.2 RGAAv4 RGAA-10.8.1">
+            <div style="flex: 1;">
+              <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 4px; flex-wrap: wrap;">
+                <span class="pass-badge">PASS</span>
+                <span class="rule-code" style="color: #15803d;">aria-hidden-body</span>
+                <span class="scan-pill">Scan 1 (Main Page)</span><span class="scan-pill">Scan 2 (Edit Modal)</span><span class="scan-pill">Scan 3 (View Modal)</span>
+              </div>
+              <div style="font-weight: 600; color: var(--text-heading); font-size: 0.95rem;">aria-hidden="true" must not be present on the document body</div>
+              <div style="font-size: 0.85rem; color: var(--text-muted);">Ensure aria-hidden="true" is not present on the document body.</div>
+              <div class="tags-row" style="margin-top: 8px;">
+                <span class="wcag-chip">cat.aria</span><span class="wcag-chip">wcag2a</span><span class="wcag-chip">wcag131</span><span class="wcag-chip">wcag412</span><span class="wcag-chip">EN-301-549</span><span class="wcag-chip">EN-9.1.3.1</span><span class="wcag-chip">EN-9.4.1.2</span><span class="wcag-chip">RGAAv4</span><span class="wcag-chip">RGAA-10.8.1</span>
+              </div>
+            </div>
+
+            <a href="https://dequeuniversity.com/rules/axe/4.13/aria-hidden-body?application=playwright" target="_blank" rel="noopener" class="docs-btn">Docs &rarr;</a>
+          </div>
+        
+          <div class="pass-row" data-scans="Scan 1 (Main Page),Scan 2 (Edit Modal),Scan 3 (View Modal)" data-search="aria-hidden-focus ARIA hidden element must not be focusable or contain focusable elements Ensure aria-hidden elements are not focusable nor contain focusable elements cat.name-role-value wcag2a wcag412 TTv5 TT6.a EN-301-549 EN-9.4.1.2 RGAAv4 RGAA-10.8.1">
+            <div style="flex: 1;">
+              <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 4px; flex-wrap: wrap;">
+                <span class="pass-badge">PASS</span>
+                <span class="rule-code" style="color: #15803d;">aria-hidden-focus</span>
+                <span class="scan-pill">Scan 1 (Main Page)</span><span class="scan-pill">Scan 2 (Edit Modal)</span><span class="scan-pill">Scan 3 (View Modal)</span>
+              </div>
+              <div style="font-weight: 600; color: var(--text-heading); font-size: 0.95rem;">ARIA hidden element must not be focusable or contain focusable elements</div>
+              <div style="font-size: 0.85rem; color: var(--text-muted);">Ensure aria-hidden elements are not focusable nor contain focusable elements</div>
+              <div class="tags-row" style="margin-top: 8px;">
+                <span class="wcag-chip">cat.name-role-value</span><span class="wcag-chip">wcag2a</span><span class="wcag-chip">wcag412</span><span class="wcag-chip">TTv5</span><span class="wcag-chip">TT6.a</span><span class="wcag-chip">EN-301-549</span><span class="wcag-chip">EN-9.4.1.2</span><span class="wcag-chip">RGAAv4</span><span class="wcag-chip">RGAA-10.8.1</span>
+              </div>
+            </div>
+
+            <a href="https://dequeuniversity.com/rules/axe/4.13/aria-hidden-focus?application=playwright" target="_blank" rel="noopener" class="docs-btn">Docs &rarr;</a>
+          </div>
+        
+          <div class="pass-row" data-scans="Scan 1 (Main Page),Scan 2 (Edit Modal),Scan 3 (View Modal)" data-search="aria-prohibited-attr Elements must only use permitted ARIA attributes Ensure ARIA attributes are not prohibited for an element's role cat.aria wcag2a wcag412 EN-301-549 EN-9.4.1.2 RGAAv4 RGAA-7.1.1">
+            <div style="flex: 1;">
+              <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 4px; flex-wrap: wrap;">
+                <span class="pass-badge">PASS</span>
+                <span class="rule-code" style="color: #15803d;">aria-prohibited-attr</span>
+                <span class="scan-pill">Scan 1 (Main Page)</span><span class="scan-pill">Scan 2 (Edit Modal)</span><span class="scan-pill">Scan 3 (View Modal)</span>
+              </div>
+              <div style="font-weight: 600; color: var(--text-heading); font-size: 0.95rem;">Elements must only use permitted ARIA attributes</div>
+              <div style="font-size: 0.85rem; color: var(--text-muted);">Ensure ARIA attributes are not prohibited for an element's role</div>
+              <div class="tags-row" style="margin-top: 8px;">
+                <span class="wcag-chip">cat.aria</span><span class="wcag-chip">wcag2a</span><span class="wcag-chip">wcag412</span><span class="wcag-chip">EN-301-549</span><span class="wcag-chip">EN-9.4.1.2</span><span class="wcag-chip">RGAAv4</span><span class="wcag-chip">RGAA-7.1.1</span>
+              </div>
+            </div>
+
+            <a href="https://dequeuniversity.com/rules/axe/4.13/aria-prohibited-attr?application=playwright" target="_blank" rel="noopener" class="docs-btn">Docs &rarr;</a>
+          </div>
+        
+          <div class="pass-row" data-scans="Scan 1 (Main Page),Scan 2 (Edit Modal),Scan 3 (View Modal)" data-search="aria-required-attr Required ARIA attributes must be provided Ensure elements with ARIA roles have all required ARIA attributes cat.aria wcag2a wcag412 EN-301-549 EN-9.4.1.2 RGAAv4 RGAA-7.1.1">
+            <div style="flex: 1;">
+              <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 4px; flex-wrap: wrap;">
+                <span class="pass-badge">PASS</span>
+                <span class="rule-code" style="color: #15803d;">aria-required-attr</span>
+                <span class="scan-pill">Scan 1 (Main Page)</span><span class="scan-pill">Scan 2 (Edit Modal)</span><span class="scan-pill">Scan 3 (View Modal)</span>
+              </div>
+              <div style="font-weight: 600; color: var(--text-heading); font-size: 0.95rem;">Required ARIA attributes must be provided</div>
+              <div style="font-size: 0.85rem; color: var(--text-muted);">Ensure elements with ARIA roles have all required ARIA attributes</div>
+              <div class="tags-row" style="margin-top: 8px;">
+                <span class="wcag-chip">cat.aria</span><span class="wcag-chip">wcag2a</span><span class="wcag-chip">wcag412</span><span class="wcag-chip">EN-301-549</span><span class="wcag-chip">EN-9.4.1.2</span><span class="wcag-chip">RGAAv4</span><span class="wcag-chip">RGAA-7.1.1</span>
+              </div>
+            </div>
+
+            <a href="https://dequeuniversity.com/rules/axe/4.13/aria-required-attr?application=playwright" target="_blank" rel="noopener" class="docs-btn">Docs &rarr;</a>
+          </div>
+        
+          <div class="pass-row" data-scans="Scan 1 (Main Page)" data-search="aria-required-children Certain ARIA roles must contain particular children Ensure elements with an ARIA role that require child roles contain them cat.aria wcag2a wcag131 EN-301-549 EN-9.1.3.1 RGAAv4 RGAA-9.3.1">
+            <div style="flex: 1;">
+              <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 4px; flex-wrap: wrap;">
+                <span class="pass-badge">PASS</span>
+                <span class="rule-code" style="color: #15803d;">aria-required-children</span>
+                <span class="scan-pill">Scan 1 (Main Page)</span>
+              </div>
+              <div style="font-weight: 600; color: var(--text-heading); font-size: 0.95rem;">Certain ARIA roles must contain particular children</div>
+              <div style="font-size: 0.85rem; color: var(--text-muted);">Ensure elements with an ARIA role that require child roles contain them</div>
+              <div class="tags-row" style="margin-top: 8px;">
+                <span class="wcag-chip">cat.aria</span><span class="wcag-chip">wcag2a</span><span class="wcag-chip">wcag131</span><span class="wcag-chip">EN-301-549</span><span class="wcag-chip">EN-9.1.3.1</span><span class="wcag-chip">RGAAv4</span><span class="wcag-chip">RGAA-9.3.1</span>
+              </div>
+            </div>
+
+            <a href="https://dequeuniversity.com/rules/axe/4.13/aria-required-children?application=playwright" target="_blank" rel="noopener" class="docs-btn">Docs &rarr;</a>
+          </div>
+        
+          <div class="pass-row" data-scans="Scan 1 (Main Page)" data-search="aria-required-parent Certain ARIA roles must be contained by particular parents Ensure elements with an ARIA role that require parent roles are contained by them cat.aria wcag2a wcag131 EN-301-549 EN-9.1.3.1 RGAAv4 RGAA-9.3.1">
+            <div style="flex: 1;">
+              <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 4px; flex-wrap: wrap;">
+                <span class="pass-badge">PASS</span>
+                <span class="rule-code" style="color: #15803d;">aria-required-parent</span>
+                <span class="scan-pill">Scan 1 (Main Page)</span>
+              </div>
+              <div style="font-weight: 600; color: var(--text-heading); font-size: 0.95rem;">Certain ARIA roles must be contained by particular parents</div>
+              <div style="font-size: 0.85rem; color: var(--text-muted);">Ensure elements with an ARIA role that require parent roles are contained by them</div>
+              <div class="tags-row" style="margin-top: 8px;">
+                <span class="wcag-chip">cat.aria</span><span class="wcag-chip">wcag2a</span><span class="wcag-chip">wcag131</span><span class="wcag-chip">EN-301-549</span><span class="wcag-chip">EN-9.1.3.1</span><span class="wcag-chip">RGAAv4</span><span class="wcag-chip">RGAA-9.3.1</span>
+              </div>
+            </div>
+
+            <a href="https://dequeuniversity.com/rules/axe/4.13/aria-required-parent?application=playwright" target="_blank" rel="noopener" class="docs-btn">Docs &rarr;</a>
+          </div>
+        
+          <div class="pass-row" data-scans="Scan 1 (Main Page),Scan 2 (Edit Modal),Scan 3 (View Modal)" data-search="aria-roles ARIA roles used must conform to valid values Ensure all elements with a role attribute use a valid value cat.aria wcag2a wcag412 EN-301-549 EN-9.4.1.2 RGAAv4 RGAA-7.1.1">
+            <div style="flex: 1;">
+              <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 4px; flex-wrap: wrap;">
+                <span class="pass-badge">PASS</span>
+                <span class="rule-code" style="color: #15803d;">aria-roles</span>
+                <span class="scan-pill">Scan 1 (Main Page)</span><span class="scan-pill">Scan 2 (Edit Modal)</span><span class="scan-pill">Scan 3 (View Modal)</span>
+              </div>
+              <div style="font-weight: 600; color: var(--text-heading); font-size: 0.95rem;">ARIA roles used must conform to valid values</div>
+              <div style="font-size: 0.85rem; color: var(--text-muted);">Ensure all elements with a role attribute use a valid value</div>
+              <div class="tags-row" style="margin-top: 8px;">
+                <span class="wcag-chip">cat.aria</span><span class="wcag-chip">wcag2a</span><span class="wcag-chip">wcag412</span><span class="wcag-chip">EN-301-549</span><span class="wcag-chip">EN-9.4.1.2</span><span class="wcag-chip">RGAAv4</span><span class="wcag-chip">RGAA-7.1.1</span>
+              </div>
+            </div>
+
+            <a href="https://dequeuniversity.com/rules/axe/4.13/aria-roles?application=playwright" target="_blank" rel="noopener" class="docs-btn">Docs &rarr;</a>
+          </div>
+        
+          <div class="pass-row" data-scans="Scan 1 (Main Page),Scan 2 (Edit Modal),Scan 3 (View Modal)" data-search="aria-valid-attr-value ARIA attributes must conform to valid values Ensure all ARIA attributes have valid values cat.aria wcag2a wcag412 EN-301-549 EN-9.4.1.2 RGAAv4 RGAA-7.1.1">
+            <div style="flex: 1;">
+              <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 4px; flex-wrap: wrap;">
+                <span class="pass-badge">PASS</span>
+                <span class="rule-code" style="color: #15803d;">aria-valid-attr-value</span>
+                <span class="scan-pill">Scan 1 (Main Page)</span><span class="scan-pill">Scan 2 (Edit Modal)</span><span class="scan-pill">Scan 3 (View Modal)</span>
+              </div>
+              <div style="font-weight: 600; color: var(--text-heading); font-size: 0.95rem;">ARIA attributes must conform to valid values</div>
+              <div style="font-size: 0.85rem; color: var(--text-muted);">Ensure all ARIA attributes have valid values</div>
+              <div class="tags-row" style="margin-top: 8px;">
+                <span class="wcag-chip">cat.aria</span><span class="wcag-chip">wcag2a</span><span class="wcag-chip">wcag412</span><span class="wcag-chip">EN-301-549</span><span class="wcag-chip">EN-9.4.1.2</span><span class="wcag-chip">RGAAv4</span><span class="wcag-chip">RGAA-7.1.1</span>
+              </div>
+            </div>
+
+            <a href="https://dequeuniversity.com/rules/axe/4.13/aria-valid-attr-value?application=playwright" target="_blank" rel="noopener" class="docs-btn">Docs &rarr;</a>
+          </div>
+        
+          <div class="pass-row" data-scans="Scan 1 (Main Page),Scan 2 (Edit Modal),Scan 3 (View Modal)" data-search="aria-valid-attr ARIA attributes must conform to valid names Ensure attributes that begin with aria- are valid ARIA attributes cat.aria wcag2a wcag412 EN-301-549 EN-9.4.1.2 RGAAv4 RGAA-7.1.1">
+            <div style="flex: 1;">
+              <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 4px; flex-wrap: wrap;">
+                <span class="pass-badge">PASS</span>
+                <span class="rule-code" style="color: #15803d;">aria-valid-attr</span>
+                <span class="scan-pill">Scan 1 (Main Page)</span><span class="scan-pill">Scan 2 (Edit Modal)</span><span class="scan-pill">Scan 3 (View Modal)</span>
+              </div>
+              <div style="font-weight: 600; color: var(--text-heading); font-size: 0.95rem;">ARIA attributes must conform to valid names</div>
+              <div style="font-size: 0.85rem; color: var(--text-muted);">Ensure attributes that begin with aria- are valid ARIA attributes</div>
+              <div class="tags-row" style="margin-top: 8px;">
+                <span class="wcag-chip">cat.aria</span><span class="wcag-chip">wcag2a</span><span class="wcag-chip">wcag412</span><span class="wcag-chip">EN-301-549</span><span class="wcag-chip">EN-9.4.1.2</span><span class="wcag-chip">RGAAv4</span><span class="wcag-chip">RGAA-7.1.1</span>
+              </div>
+            </div>
+
+            <a href="https://dequeuniversity.com/rules/axe/4.13/aria-valid-attr?application=playwright" target="_blank" rel="noopener" class="docs-btn">Docs &rarr;</a>
+          </div>
+        
+          <div class="pass-row" data-scans="Scan 1 (Main Page),Scan 2 (Edit Modal),Scan 3 (View Modal)" data-search="button-name Buttons must have discernible text Ensure buttons have discernible text cat.name-role-value wcag2a wcag412 section508 section508.22.a TTv5 TT6.a EN-301-549 EN-9.4.1.2 ACT RGAAv4 RGAA-11.9.1">
+            <div style="flex: 1;">
+              <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 4px; flex-wrap: wrap;">
+                <span class="pass-badge">PASS</span>
+                <span class="rule-code" style="color: #15803d;">button-name</span>
+                <span class="scan-pill">Scan 1 (Main Page)</span><span class="scan-pill">Scan 2 (Edit Modal)</span><span class="scan-pill">Scan 3 (View Modal)</span>
+              </div>
+              <div style="font-weight: 600; color: var(--text-heading); font-size: 0.95rem;">Buttons must have discernible text</div>
+              <div style="font-size: 0.85rem; color: var(--text-muted);">Ensure buttons have discernible text</div>
+              <div class="tags-row" style="margin-top: 8px;">
+                <span class="wcag-chip">cat.name-role-value</span><span class="wcag-chip">wcag2a</span><span class="wcag-chip">wcag412</span><span class="wcag-chip">section508</span><span class="wcag-chip">section508.22.a</span><span class="wcag-chip">TTv5</span><span class="wcag-chip">TT6.a</span><span class="wcag-chip">EN-301-549</span><span class="wcag-chip">EN-9.4.1.2</span><span class="wcag-chip">ACT</span><span class="wcag-chip">RGAAv4</span><span class="wcag-chip">RGAA-11.9.1</span>
+              </div>
+            </div>
+
+            <a href="https://dequeuniversity.com/rules/axe/4.13/button-name?application=playwright" target="_blank" rel="noopener" class="docs-btn">Docs &rarr;</a>
+          </div>
+        
+          <div class="pass-row" data-scans="Scan 1 (Main Page)" data-search="bypass Page must have means to bypass repeated blocks Ensure each page has at least one mechanism for a user to bypass navigation and jump straight to the content cat.keyboard wcag2a wcag241 section508 section508.22.o TTv5 TT9.a EN-301-549 EN-9.2.4.1 RGAAv4 RGAA-12.7.1">
+            <div style="flex: 1;">
+              <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 4px; flex-wrap: wrap;">
+                <span class="pass-badge">PASS</span>
+                <span class="rule-code" style="color: #15803d;">bypass</span>
+                <span class="scan-pill">Scan 1 (Main Page)</span>
+              </div>
+              <div style="font-weight: 600; color: var(--text-heading); font-size: 0.95rem;">Page must have means to bypass repeated blocks</div>
+              <div style="font-size: 0.85rem; color: var(--text-muted);">Ensure each page has at least one mechanism for a user to bypass navigation and jump straight to the content</div>
+              <div class="tags-row" style="margin-top: 8px;">
+                <span class="wcag-chip">cat.keyboard</span><span class="wcag-chip">wcag2a</span><span class="wcag-chip">wcag241</span><span class="wcag-chip">section508</span><span class="wcag-chip">section508.22.o</span><span class="wcag-chip">TTv5</span><span class="wcag-chip">TT9.a</span><span class="wcag-chip">EN-301-549</span><span class="wcag-chip">EN-9.2.4.1</span><span class="wcag-chip">RGAAv4</span><span class="wcag-chip">RGAA-12.7.1</span>
+              </div>
+            </div>
+
+            <a href="https://dequeuniversity.com/rules/axe/4.13/bypass?application=playwright" target="_blank" rel="noopener" class="docs-btn">Docs &rarr;</a>
+          </div>
+        
+          <div class="pass-row" data-scans="Scan 1 (Main Page),Scan 2 (Edit Modal),Scan 3 (View Modal)" data-search="color-contrast Elements must meet minimum color contrast ratio thresholds Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds cat.color wcag2aa wcag143 TTv5 TT13.c EN-301-549 EN-9.1.4.3 ACT RGAAv4 RGAA-3.2.1">
+            <div style="flex: 1;">
+              <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 4px; flex-wrap: wrap;">
+                <span class="pass-badge">PASS</span>
+                <span class="rule-code" style="color: #15803d;">color-contrast</span>
+                <span class="scan-pill">Scan 1 (Main Page)</span><span class="scan-pill">Scan 2 (Edit Modal)</span><span class="scan-pill">Scan 3 (View Modal)</span>
+              </div>
+              <div style="font-weight: 600; color: var(--text-heading); font-size: 0.95rem;">Elements must meet minimum color contrast ratio thresholds</div>
+              <div style="font-size: 0.85rem; color: var(--text-muted);">Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds</div>
+              <div class="tags-row" style="margin-top: 8px;">
+                <span class="wcag-chip">cat.color</span><span class="wcag-chip">wcag2aa</span><span class="wcag-chip">wcag143</span><span class="wcag-chip">TTv5</span><span class="wcag-chip">TT13.c</span><span class="wcag-chip">EN-301-549</span><span class="wcag-chip">EN-9.1.4.3</span><span class="wcag-chip">ACT</span><span class="wcag-chip">RGAAv4</span><span class="wcag-chip">RGAA-3.2.1</span>
+              </div>
+            </div>
+
+            <a href="https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=playwright" target="_blank" rel="noopener" class="docs-btn">Docs &rarr;</a>
+          </div>
+        
+          <div class="pass-row" data-scans="Scan 1 (Main Page),Scan 2 (Edit Modal),Scan 3 (View Modal)" data-search="document-title Documents must have <title> element to aid in navigation Ensure each HTML document contains a non-empty <title> element cat.text-alternatives wcag2a wcag242 TTv5 TT12.a EN-301-549 EN-9.2.4.2 ACT RGAAv4 RGAA-8.5.1">
+            <div style="flex: 1;">
+              <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 4px; flex-wrap: wrap;">
+                <span class="pass-badge">PASS</span>
+                <span class="rule-code" style="color: #15803d;">document-title</span>
+                <span class="scan-pill">Scan 1 (Main Page)</span><span class="scan-pill">Scan 2 (Edit Modal)</span><span class="scan-pill">Scan 3 (View Modal)</span>
+              </div>
+              <div style="font-weight: 600; color: var(--text-heading); font-size: 0.95rem;">Documents must have <title> element to aid in navigation</div>
+              <div style="font-size: 0.85rem; color: var(--text-muted);">Ensure each HTML document contains a non-empty <title> element</div>
+              <div class="tags-row" style="margin-top: 8px;">
+                <span class="wcag-chip">cat.text-alternatives</span><span class="wcag-chip">wcag2a</span><span class="wcag-chip">wcag242</span><span class="wcag-chip">TTv5</span><span class="wcag-chip">TT12.a</span><span class="wcag-chip">EN-301-549</span><span class="wcag-chip">EN-9.2.4.2</span><span class="wcag-chip">ACT</span><span class="wcag-chip">RGAAv4</span><span class="wcag-chip">RGAA-8.5.1</span>
+              </div>
+            </div>
+
+            <a href="https://dequeuniversity.com/rules/axe/4.13/document-title?application=playwright" target="_blank" rel="noopener" class="docs-btn">Docs &rarr;</a>
+          </div>
+        
+          <div class="pass-row" data-scans="Scan 1 (Main Page),Scan 2 (Edit Modal),Scan 3 (View Modal)" data-search="duplicate-id-aria IDs used in ARIA and labels must be unique Ensure every id attribute value used in ARIA and in labels is unique cat.parsing wcag2a wcag412 EN-301-549 EN-9.4.1.2 RGAAv4 RGAA-8.2.1">
+            <div style="flex: 1;">
+              <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 4px; flex-wrap: wrap;">
+                <span class="pass-badge">PASS</span>
+                <span class="rule-code" style="color: #15803d;">duplicate-id-aria</span>
+                <span class="scan-pill">Scan 1 (Main Page)</span><span class="scan-pill">Scan 2 (Edit Modal)</span><span class="scan-pill">Scan 3 (View Modal)</span>
+              </div>
+              <div style="font-weight: 600; color: var(--text-heading); font-size: 0.95rem;">IDs used in ARIA and labels must be unique</div>
+              <div style="font-size: 0.85rem; color: var(--text-muted);">Ensure every id attribute value used in ARIA and in labels is unique</div>
+              <div class="tags-row" style="margin-top: 8px;">
+                <span class="wcag-chip">cat.parsing</span><span class="wcag-chip">wcag2a</span><span class="wcag-chip">wcag412</span><span class="wcag-chip">EN-301-549</span><span class="wcag-chip">EN-9.4.1.2</span><span class="wcag-chip">RGAAv4</span><span class="wcag-chip">RGAA-8.2.1</span>
+              </div>
+            </div>
+
+            <a href="https://dequeuniversity.com/rules/axe/4.13/duplicate-id-aria?application=playwright" target="_blank" rel="noopener" class="docs-btn">Docs &rarr;</a>
+          </div>
+        
+          <div class="pass-row" data-scans="Scan 1 (Main Page),Scan 2 (Edit Modal),Scan 3 (View Modal)" data-search="empty-heading Headings should not be empty Ensure headings have discernible text cat.name-role-value best-practice">
+            <div style="flex: 1;">
+              <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 4px; flex-wrap: wrap;">
+                <span class="pass-badge">PASS</span>
+                <span class="rule-code" style="color: #15803d;">empty-heading</span>
+                <span class="scan-pill">Scan 1 (Main Page)</span><span class="scan-pill">Scan 2 (Edit Modal)</span><span class="scan-pill">Scan 3 (View Modal)</span>
+              </div>
+              <div style="font-weight: 600; color: var(--text-heading); font-size: 0.95rem;">Headings should not be empty</div>
+              <div style="font-size: 0.85rem; color: var(--text-muted);">Ensure headings have discernible text</div>
+              <div class="tags-row" style="margin-top: 8px;">
+                <span class="wcag-chip">cat.name-role-value</span><span class="wcag-chip">best-practice</span>
+              </div>
+            </div>
+
+            <a href="https://dequeuniversity.com/rules/axe/4.13/empty-heading?application=playwright" target="_blank" rel="noopener" class="docs-btn">Docs &rarr;</a>
+          </div>
+        
+          <div class="pass-row" data-scans="Scan 1 (Main Page)" data-search="empty-table-header Table header text should not be empty Ensure table headers have discernible text cat.name-role-value best-practice">
+            <div style="flex: 1;">
+              <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 4px; flex-wrap: wrap;">
+                <span class="pass-badge">PASS</span>
+                <span class="rule-code" style="color: #15803d;">empty-table-header</span>
+                <span class="scan-pill">Scan 1 (Main Page)</span>
+              </div>
+              <div style="font-weight: 600; color: var(--text-heading); font-size: 0.95rem;">Table header text should not be empty</div>
+              <div style="font-size: 0.85rem; color: var(--text-muted);">Ensure table headers have discernible text</div>
+              <div class="tags-row" style="margin-top: 8px;">
+                <span class="wcag-chip">cat.name-role-value</span><span class="wcag-chip">best-practice</span>
+              </div>
+            </div>
+
+            <a href="https://dequeuniversity.com/rules/axe/4.13/empty-table-header?application=playwright" target="_blank" rel="noopener" class="docs-btn">Docs &rarr;</a>
+          </div>
+        
+          <div class="pass-row" data-scans="Scan 1 (Main Page),Scan 2 (Edit Modal),Scan 3 (View Modal)" data-search="heading-order Heading levels should only increase by one Ensure the order of headings is semantically correct cat.semantics best-practice">
+            <div style="flex: 1;">
+              <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 4px; flex-wrap: wrap;">
+                <span class="pass-badge">PASS</span>
+                <span class="rule-code" style="color: #15803d;">heading-order</span>
+                <span class="scan-pill">Scan 1 (Main Page)</span><span class="scan-pill">Scan 2 (Edit Modal)</span><span class="scan-pill">Scan 3 (View Modal)</span>
+              </div>
+              <div style="font-weight: 600; color: var(--text-heading); font-size: 0.95rem;">Heading levels should only increase by one</div>
+              <div style="font-size: 0.85rem; color: var(--text-muted);">Ensure the order of headings is semantically correct</div>
+              <div class="tags-row" style="margin-top: 8px;">
+                <span class="wcag-chip">cat.semantics</span><span class="wcag-chip">best-practice</span>
+              </div>
+            </div>
+
+            <a href="https://dequeuniversity.com/rules/axe/4.13/heading-order?application=playwright" target="_blank" rel="noopener" class="docs-btn">Docs &rarr;</a>
+          </div>
+        
+          <div class="pass-row" data-scans="Scan 1 (Main Page),Scan 2 (Edit Modal),Scan 3 (View Modal)" data-search="html-has-lang <html> element must have a lang attribute Ensure every HTML document has a lang attribute cat.language wcag2a wcag311 TTv5 TT11.a EN-301-549 EN-9.3.1.1 ACT RGAAv4 RGAA-8.3.1">
+            <div style="flex: 1;">
+              <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 4px; flex-wrap: wrap;">
+                <span class="pass-badge">PASS</span>
+                <span class="rule-code" style="color: #15803d;">html-has-lang</span>
+                <span class="scan-pill">Scan 1 (Main Page)</span><span class="scan-pill">Scan 2 (Edit Modal)</span><span class="scan-pill">Scan 3 (View Modal)</span>
+              </div>
+              <div style="font-weight: 600; color: var(--text-heading); font-size: 0.95rem;"><html> element must have a lang attribute</div>
+              <div style="font-size: 0.85rem; color: var(--text-muted);">Ensure every HTML document has a lang attribute</div>
+              <div class="tags-row" style="margin-top: 8px;">
+                <span class="wcag-chip">cat.language</span><span class="wcag-chip">wcag2a</span><span class="wcag-chip">wcag311</span><span class="wcag-chip">TTv5</span><span class="wcag-chip">TT11.a</span><span class="wcag-chip">EN-301-549</span><span class="wcag-chip">EN-9.3.1.1</span><span class="wcag-chip">ACT</span><span class="wcag-chip">RGAAv4</span><span class="wcag-chip">RGAA-8.3.1</span>
+              </div>
+            </div>
+
+            <a href="https://dequeuniversity.com/rules/axe/4.13/html-has-lang?application=playwright" target="_blank" rel="noopener" class="docs-btn">Docs &rarr;</a>
+          </div>
+        
+          <div class="pass-row" data-scans="Scan 1 (Main Page),Scan 2 (Edit Modal),Scan 3 (View Modal)" data-search="html-lang-valid <html> element must have a valid value for the lang attribute Ensure the lang attribute of the <html> element has a valid value cat.language wcag2a wcag311 TTv5 TT11.a EN-301-549 EN-9.3.1.1 ACT RGAAv4 RGAA-8.4.1">
+            <div style="flex: 1;">
+              <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 4px; flex-wrap: wrap;">
+                <span class="pass-badge">PASS</span>
+                <span class="rule-code" style="color: #15803d;">html-lang-valid</span>
+                <span class="scan-pill">Scan 1 (Main Page)</span><span class="scan-pill">Scan 2 (Edit Modal)</span><span class="scan-pill">Scan 3 (View Modal)</span>
+              </div>
+              <div style="font-weight: 600; color: var(--text-heading); font-size: 0.95rem;"><html> element must have a valid value for the lang attribute</div>
+              <div style="font-size: 0.85rem; color: var(--text-muted);">Ensure the lang attribute of the <html> element has a valid value</div>
+              <div class="tags-row" style="margin-top: 8px;">
+                <span class="wcag-chip">cat.language</span><span class="wcag-chip">wcag2a</span><span class="wcag-chip">wcag311</span><span class="wcag-chip">TTv5</span><span class="wcag-chip">TT11.a</span><span class="wcag-chip">EN-301-549</span><span class="wcag-chip">EN-9.3.1.1</span><span class="wcag-chip">ACT</span><span class="wcag-chip">RGAAv4</span><span class="wcag-chip">RGAA-8.4.1</span>
+              </div>
+            </div>
+
+            <a href="https://dequeuniversity.com/rules/axe/4.13/html-lang-valid?application=playwright" target="_blank" rel="noopener" class="docs-btn">Docs &rarr;</a>
+          </div>
+        
+          <div class="pass-row" data-scans="Scan 1 (Main Page)" data-search="image-alt Images must have alternative text Ensure <img> elements have alternative text or a role of none or presentation cat.text-alternatives wcag2a wcag111 section508 section508.22.a TTv5 TT7.a TT7.b EN-301-549 EN-9.1.1.1 ACT RGAAv4 RGAA-1.1.1">
+            <div style="flex: 1;">
+              <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 4px; flex-wrap: wrap;">
+                <span class="pass-badge">PASS</span>
+                <span class="rule-code" style="color: #15803d;">image-alt</span>
+                <span class="scan-pill">Scan 1 (Main Page)</span>
+              </div>
+              <div style="font-weight: 600; color: var(--text-heading); font-size: 0.95rem;">Images must have alternative text</div>
+              <div style="font-size: 0.85rem; color: var(--text-muted);">Ensure <img> elements have alternative text or a role of none or presentation</div>
+              <div class="tags-row" style="margin-top: 8px;">
+                <span class="wcag-chip">cat.text-alternatives</span><span class="wcag-chip">wcag2a</span><span class="wcag-chip">wcag111</span><span class="wcag-chip">section508</span><span class="wcag-chip">section508.22.a</span><span class="wcag-chip">TTv5</span><span class="wcag-chip">TT7.a</span><span class="wcag-chip">TT7.b</span><span class="wcag-chip">EN-301-549</span><span class="wcag-chip">EN-9.1.1.1</span><span class="wcag-chip">ACT</span><span class="wcag-chip">RGAAv4</span><span class="wcag-chip">RGAA-1.1.1</span>
+              </div>
+            </div>
+
+            <a href="https://dequeuniversity.com/rules/axe/4.13/image-alt?application=playwright" target="_blank" rel="noopener" class="docs-btn">Docs &rarr;</a>
+          </div>
+        
+          <div class="pass-row" data-scans="Scan 1 (Main Page)" data-search="image-redundant-alt Alternative text of images should not be repeated as text Ensure image alternative is not repeated as text cat.text-alternatives best-practice">
+            <div style="flex: 1;">
+              <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 4px; flex-wrap: wrap;">
+                <span class="pass-badge">PASS</span>
+                <span class="rule-code" style="color: #15803d;">image-redundant-alt</span>
+                <span class="scan-pill">Scan 1 (Main Page)</span>
+              </div>
+              <div style="font-weight: 600; color: var(--text-heading); font-size: 0.95rem;">Alternative text of images should not be repeated as text</div>
+              <div style="font-size: 0.85rem; color: var(--text-muted);">Ensure image alternative is not repeated as text</div>
+              <div class="tags-row" style="margin-top: 8px;">
+                <span class="wcag-chip">cat.text-alternatives</span><span class="wcag-chip">best-practice</span>
+              </div>
+            </div>
+
+            <a href="https://dequeuniversity.com/rules/axe/4.13/image-redundant-alt?application=playwright" target="_blank" rel="noopener" class="docs-btn">Docs &rarr;</a>
+          </div>
+        
+          <div class="pass-row" data-scans="Scan 1 (Main Page)" data-search="landmark-banner-is-top-level Banner landmark should not be contained in another landmark Ensure the banner landmark is at top level cat.semantics best-practice">
+            <div style="flex: 1;">
+              <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 4px; flex-wrap: wrap;">
+                <span class="pass-badge">PASS</span>
+                <span class="rule-code" style="color: #15803d;">landmark-banner-is-top-level</span>
+                <span class="scan-pill">Scan 1 (Main Page)</span>
+              </div>
+              <div style="font-weight: 600; color: var(--text-heading); font-size: 0.95rem;">Banner landmark should not be contained in another landmark</div>
+              <div style="font-size: 0.85rem; color: var(--text-muted);">Ensure the banner landmark is at top level</div>
+              <div class="tags-row" style="margin-top: 8px;">
+                <span class="wcag-chip">cat.semantics</span><span class="wcag-chip">best-practice</span>
+              </div>
+            </div>
+
+            <a href="https://dequeuniversity.com/rules/axe/4.13/landmark-banner-is-top-level?application=playwright" target="_blank" rel="noopener" class="docs-btn">Docs &rarr;</a>
+          </div>
+        
+          <div class="pass-row" data-scans="Scan 1 (Main Page),Scan 2 (Edit Modal),Scan 3 (View Modal)" data-search="landmark-main-is-top-level Main landmark should not be contained in another landmark Ensure the main landmark is at top level cat.semantics best-practice">
+            <div style="flex: 1;">
+              <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 4px; flex-wrap: wrap;">
+                <span class="pass-badge">PASS</span>
+                <span class="rule-code" style="color: #15803d;">landmark-main-is-top-level</span>
+                <span class="scan-pill">Scan 1 (Main Page)</span><span class="scan-pill">Scan 2 (Edit Modal)</span><span class="scan-pill">Scan 3 (View Modal)</span>
+              </div>
+              <div style="font-weight: 600; color: var(--text-heading); font-size: 0.95rem;">Main landmark should not be contained in another landmark</div>
+              <div style="font-size: 0.85rem; color: var(--text-muted);">Ensure the main landmark is at top level</div>
+              <div class="tags-row" style="margin-top: 8px;">
+                <span class="wcag-chip">cat.semantics</span><span class="wcag-chip">best-practice</span>
+              </div>
+            </div>
+
+            <a href="https://dequeuniversity.com/rules/axe/4.13/landmark-main-is-top-level?application=playwright" target="_blank" rel="noopener" class="docs-btn">Docs &rarr;</a>
+          </div>
+        
+          <div class="pass-row" data-scans="Scan 1 (Main Page)" data-search="landmark-no-duplicate-banner Document should not have more than one banner landmark Ensure the document has at most one banner landmark cat.semantics best-practice">
+            <div style="flex: 1;">
+              <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 4px; flex-wrap: wrap;">
+                <span class="pass-badge">PASS</span>
+                <span class="rule-code" style="color: #15803d;">landmark-no-duplicate-banner</span>
+                <span class="scan-pill">Scan 1 (Main Page)</span>
+              </div>
+              <div style="font-weight: 600; color: var(--text-heading); font-size: 0.95rem;">Document should not have more than one banner landmark</div>
+              <div style="font-size: 0.85rem; color: var(--text-muted);">Ensure the document has at most one banner landmark</div>
+              <div class="tags-row" style="margin-top: 8px;">
+                <span class="wcag-chip">cat.semantics</span><span class="wcag-chip">best-practice</span>
+              </div>
+            </div>
+
+            <a href="https://dequeuniversity.com/rules/axe/4.13/landmark-no-duplicate-banner?application=playwright" target="_blank" rel="noopener" class="docs-btn">Docs &rarr;</a>
+          </div>
+        
+          <div class="pass-row" data-scans="Scan 1 (Main Page),Scan 2 (Edit Modal),Scan 3 (View Modal)" data-search="landmark-no-duplicate-main Document should not have more than one main landmark Ensure the document has at most one main landmark cat.semantics best-practice">
+            <div style="flex: 1;">
+              <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 4px; flex-wrap: wrap;">
+                <span class="pass-badge">PASS</span>
+                <span class="rule-code" style="color: #15803d;">landmark-no-duplicate-main</span>
+                <span class="scan-pill">Scan 1 (Main Page)</span><span class="scan-pill">Scan 2 (Edit Modal)</span><span class="scan-pill">Scan 3 (View Modal)</span>
+              </div>
+              <div style="font-weight: 600; color: var(--text-heading); font-size: 0.95rem;">Document should not have more than one main landmark</div>
+              <div style="font-size: 0.85rem; color: var(--text-muted);">Ensure the document has at most one main landmark</div>
+              <div class="tags-row" style="margin-top: 8px;">
+                <span class="wcag-chip">cat.semantics</span><span class="wcag-chip">best-practice</span>
+              </div>
+            </div>
+
+            <a href="https://dequeuniversity.com/rules/axe/4.13/landmark-no-duplicate-main?application=playwright" target="_blank" rel="noopener" class="docs-btn">Docs &rarr;</a>
+          </div>
+        
+          <div class="pass-row" data-scans="Scan 1 (Main Page),Scan 2 (Edit Modal),Scan 3 (View Modal)" data-search="landmark-one-main Document should have one main landmark Ensure the document has a main landmark cat.semantics best-practice">
+            <div style="flex: 1;">
+              <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 4px; flex-wrap: wrap;">
+                <span class="pass-badge">PASS</span>
+                <span class="rule-code" style="color: #15803d;">landmark-one-main</span>
+                <span class="scan-pill">Scan 1 (Main Page)</span><span class="scan-pill">Scan 2 (Edit Modal)</span><span class="scan-pill">Scan 3 (View Modal)</span>
+              </div>
+              <div style="font-weight: 600; color: var(--text-heading); font-size: 0.95rem;">Document should have one main landmark</div>
+              <div style="font-size: 0.85rem; color: var(--text-muted);">Ensure the document has a main landmark</div>
+              <div class="tags-row" style="margin-top: 8px;">
+                <span class="wcag-chip">cat.semantics</span><span class="wcag-chip">best-practice</span>
+              </div>
+            </div>
+
+            <a href="https://dequeuniversity.com/rules/axe/4.13/landmark-one-main?application=playwright" target="_blank" rel="noopener" class="docs-btn">Docs &rarr;</a>
+          </div>
+        
+          <div class="pass-row" data-scans="Scan 1 (Main Page),Scan 2 (Edit Modal),Scan 3 (View Modal)" data-search="landmark-unique Landmarks should have a unique role or role/label/title (i.e. accessible name) combination Ensure landmarks are unique cat.semantics best-practice">
+            <div style="flex: 1;">
+              <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 4px; flex-wrap: wrap;">
+                <span class="pass-badge">PASS</span>
+                <span class="rule-code" style="color: #15803d;">landmark-unique</span>
+                <span class="scan-pill">Scan 1 (Main Page)</span><span class="scan-pill">Scan 2 (Edit Modal)</span><span class="scan-pill">Scan 3 (View Modal)</span>
+              </div>
+              <div style="font-weight: 600; color: var(--text-heading); font-size: 0.95rem;">Landmarks should have a unique role or role/label/title (i.e. accessible name) combination</div>
+              <div style="font-size: 0.85rem; color: var(--text-muted);">Ensure landmarks are unique</div>
+              <div class="tags-row" style="margin-top: 8px;">
+                <span class="wcag-chip">cat.semantics</span><span class="wcag-chip">best-practice</span>
+              </div>
+            </div>
+
+            <a href="https://dequeuniversity.com/rules/axe/4.13/landmark-unique?application=playwright" target="_blank" rel="noopener" class="docs-btn">Docs &rarr;</a>
+          </div>
+        
+          <div class="pass-row" data-scans="Scan 1 (Main Page)" data-search="link-name Links must have discernible text Ensure links have discernible text cat.name-role-value wcag2a wcag244 wcag412 section508 section508.22.a TTv5 TT6.a EN-301-549 EN-9.2.4.4 EN-9.4.1.2 ACT RGAAv4 RGAA-6.2.1">
+            <div style="flex: 1;">
+              <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 4px; flex-wrap: wrap;">
+                <span class="pass-badge">PASS</span>
+                <span class="rule-code" style="color: #15803d;">link-name</span>
+                <span class="scan-pill">Scan 1 (Main Page)</span>
+              </div>
+              <div style="font-weight: 600; color: var(--text-heading); font-size: 0.95rem;">Links must have discernible text</div>
+              <div style="font-size: 0.85rem; color: var(--text-muted);">Ensure links have discernible text</div>
+              <div class="tags-row" style="margin-top: 8px;">
+                <span class="wcag-chip">cat.name-role-value</span><span class="wcag-chip">wcag2a</span><span class="wcag-chip">wcag244</span><span class="wcag-chip">wcag412</span><span class="wcag-chip">section508</span><span class="wcag-chip">section508.22.a</span><span class="wcag-chip">TTv5</span><span class="wcag-chip">TT6.a</span><span class="wcag-chip">EN-301-549</span><span class="wcag-chip">EN-9.2.4.4</span><span class="wcag-chip">EN-9.4.1.2</span><span class="wcag-chip">ACT</span><span class="wcag-chip">RGAAv4</span><span class="wcag-chip">RGAA-6.2.1</span>
+              </div>
+            </div>
+
+            <a href="https://dequeuniversity.com/rules/axe/4.13/link-name?application=playwright" target="_blank" rel="noopener" class="docs-btn">Docs &rarr;</a>
+          </div>
+        
+          <div class="pass-row" data-scans="Scan 1 (Main Page),Scan 3 (View Modal)" data-search="list <ul> and <ol> must only directly contain <li>, <script> or <template> elements Ensure that lists are structured correctly cat.structure wcag2a wcag131 EN-301-549 EN-9.1.3.1 RGAAv4 RGAA-9.3.1">
+            <div style="flex: 1;">
+              <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 4px; flex-wrap: wrap;">
+                <span class="pass-badge">PASS</span>
+                <span class="rule-code" style="color: #15803d;">list</span>
+                <span class="scan-pill">Scan 1 (Main Page)</span><span class="scan-pill">Scan 3 (View Modal)</span>
+              </div>
+              <div style="font-weight: 600; color: var(--text-heading); font-size: 0.95rem;"><ul> and <ol> must only directly contain <li>, <script> or <template> elements</div>
+              <div style="font-size: 0.85rem; color: var(--text-muted);">Ensure that lists are structured correctly</div>
+              <div class="tags-row" style="margin-top: 8px;">
+                <span class="wcag-chip">cat.structure</span><span class="wcag-chip">wcag2a</span><span class="wcag-chip">wcag131</span><span class="wcag-chip">EN-301-549</span><span class="wcag-chip">EN-9.1.3.1</span><span class="wcag-chip">RGAAv4</span><span class="wcag-chip">RGAA-9.3.1</span>
+              </div>
+            </div>
+
+            <a href="https://dequeuniversity.com/rules/axe/4.13/list?application=playwright" target="_blank" rel="noopener" class="docs-btn">Docs &rarr;</a>
+          </div>
+        
+          <div class="pass-row" data-scans="Scan 1 (Main Page),Scan 3 (View Modal)" data-search="listitem <li> elements must be contained in a <ul> or <ol> Ensure <li> elements are used semantically cat.structure wcag2a wcag131 EN-301-549 EN-9.1.3.1 RGAAv4 RGAA-9.3.1">
+            <div style="flex: 1;">
+              <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 4px; flex-wrap: wrap;">
+                <span class="pass-badge">PASS</span>
+                <span class="rule-code" style="color: #15803d;">listitem</span>
+                <span class="scan-pill">Scan 1 (Main Page)</span><span class="scan-pill">Scan 3 (View Modal)</span>
+              </div>
+              <div style="font-weight: 600; color: var(--text-heading); font-size: 0.95rem;"><li> elements must be contained in a <ul> or <ol></div>
+              <div style="font-size: 0.85rem; color: var(--text-muted);">Ensure <li> elements are used semantically</div>
+              <div class="tags-row" style="margin-top: 8px;">
+                <span class="wcag-chip">cat.structure</span><span class="wcag-chip">wcag2a</span><span class="wcag-chip">wcag131</span><span class="wcag-chip">EN-301-549</span><span class="wcag-chip">EN-9.1.3.1</span><span class="wcag-chip">RGAAv4</span><span class="wcag-chip">RGAA-9.3.1</span>
+              </div>
+            </div>
+
+            <a href="https://dequeuniversity.com/rules/axe/4.13/listitem?application=playwright" target="_blank" rel="noopener" class="docs-btn">Docs &rarr;</a>
+          </div>
+        
+          <div class="pass-row" data-scans="Scan 1 (Main Page),Scan 2 (Edit Modal),Scan 3 (View Modal)" data-search="nested-interactive Interactive controls must not be nested Ensure interactive controls are not nested as they are not always announced by screen readers or can cause focus problems for assistive technologies cat.keyboard wcag2a wcag412 TTv5 TT6.a EN-301-549 EN-9.4.1.2 RGAAv4 RGAA-7.1.1">
+            <div style="flex: 1;">
+              <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 4px; flex-wrap: wrap;">
+                <span class="pass-badge">PASS</span>
+                <span class="rule-code" style="color: #15803d;">nested-interactive</span>
+                <span class="scan-pill">Scan 1 (Main Page)</span><span class="scan-pill">Scan 2 (Edit Modal)</span><span class="scan-pill">Scan 3 (View Modal)</span>
+              </div>
+              <div style="font-weight: 600; color: var(--text-heading); font-size: 0.95rem;">Interactive controls must not be nested</div>
+              <div style="font-size: 0.85rem; color: var(--text-muted);">Ensure interactive controls are not nested as they are not always announced by screen readers or can cause focus problems for assistive technologies</div>
+              <div class="tags-row" style="margin-top: 8px;">
+                <span class="wcag-chip">cat.keyboard</span><span class="wcag-chip">wcag2a</span><span class="wcag-chip">wcag412</span><span class="wcag-chip">TTv5</span><span class="wcag-chip">TT6.a</span><span class="wcag-chip">EN-301-549</span><span class="wcag-chip">EN-9.4.1.2</span><span class="wcag-chip">RGAAv4</span><span class="wcag-chip">RGAA-7.1.1</span>
+              </div>
+            </div>
+
+            <a href="https://dequeuniversity.com/rules/axe/4.13/nested-interactive?application=playwright" target="_blank" rel="noopener" class="docs-btn">Docs &rarr;</a>
+          </div>
+        
+          <div class="pass-row" data-scans="Scan 1 (Main Page),Scan 2 (Edit Modal),Scan 3 (View Modal)" data-search="page-has-heading-one Page should contain a level-one heading Ensure that the page, or at least one of its frames contains a level-one heading cat.semantics best-practice">
+            <div style="flex: 1;">
+              <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 4px; flex-wrap: wrap;">
+                <span class="pass-badge">PASS</span>
+                <span class="rule-code" style="color: #15803d;">page-has-heading-one</span>
+                <span class="scan-pill">Scan 1 (Main Page)</span><span class="scan-pill">Scan 2 (Edit Modal)</span><span class="scan-pill">Scan 3 (View Modal)</span>
+              </div>
+              <div style="font-weight: 600; color: var(--text-heading); font-size: 0.95rem;">Page should contain a level-one heading</div>
+              <div style="font-size: 0.85rem; color: var(--text-muted);">Ensure that the page, or at least one of its frames contains a level-one heading</div>
+              <div class="tags-row" style="margin-top: 8px;">
+                <span class="wcag-chip">cat.semantics</span><span class="wcag-chip">best-practice</span>
+              </div>
+            </div>
+
+            <a href="https://dequeuniversity.com/rules/axe/4.13/page-has-heading-one?application=playwright" target="_blank" rel="noopener" class="docs-btn">Docs &rarr;</a>
+          </div>
+        
+          <div class="pass-row" data-scans="Scan 1 (Main Page)" data-search="presentation-role-conflict Elements marked as presentational should be consistently ignored Ensure elements marked as presentational do not have global ARIA or tabindex so that all screen readers ignore them cat.aria best-practice ACT">
+            <div style="flex: 1;">
+              <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 4px; flex-wrap: wrap;">
+                <span class="pass-badge">PASS</span>
+                <span class="rule-code" style="color: #15803d;">presentation-role-conflict</span>
+                <span class="scan-pill">Scan 1 (Main Page)</span>
+              </div>
+              <div style="font-weight: 600; color: var(--text-heading); font-size: 0.95rem;">Elements marked as presentational should be consistently ignored</div>
+              <div style="font-size: 0.85rem; color: var(--text-muted);">Ensure elements marked as presentational do not have global ARIA or tabindex so that all screen readers ignore them</div>
+              <div class="tags-row" style="margin-top: 8px;">
+                <span class="wcag-chip">cat.aria</span><span class="wcag-chip">best-practice</span><span class="wcag-chip">ACT</span>
+              </div>
+            </div>
+
+            <a href="https://dequeuniversity.com/rules/axe/4.13/presentation-role-conflict?application=playwright" target="_blank" rel="noopener" class="docs-btn">Docs &rarr;</a>
+          </div>
+        
+          <div class="pass-row" data-scans="Scan 1 (Main Page),Scan 2 (Edit Modal),Scan 3 (View Modal)" data-search="region All page content should be contained by landmarks Ensure all page content is contained by landmarks cat.keyboard best-practice RGAAv4 RGAA-9.2.1">
+            <div style="flex: 1;">
+              <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 4px; flex-wrap: wrap;">
+                <span class="pass-badge">PASS</span>
+                <span class="rule-code" style="color: #15803d;">region</span>
+                <span class="scan-pill">Scan 1 (Main Page)</span><span class="scan-pill">Scan 2 (Edit Modal)</span><span class="scan-pill">Scan 3 (View Modal)</span>
+              </div>
+              <div style="font-weight: 600; color: var(--text-heading); font-size: 0.95rem;">All page content should be contained by landmarks</div>
+              <div style="font-size: 0.85rem; color: var(--text-muted);">Ensure all page content is contained by landmarks</div>
+              <div class="tags-row" style="margin-top: 8px;">
+                <span class="wcag-chip">cat.keyboard</span><span class="wcag-chip">best-practice</span><span class="wcag-chip">RGAAv4</span><span class="wcag-chip">RGAA-9.2.1</span>
+              </div>
+            </div>
+
+            <a href="https://dequeuniversity.com/rules/axe/4.13/region?application=playwright" target="_blank" rel="noopener" class="docs-btn">Docs &rarr;</a>
+          </div>
+        
+          <div class="pass-row" data-scans="Scan 1 (Main Page)" data-search="scope-attr-valid scope attribute should be used correctly Ensure the scope attribute is used correctly on tables cat.tables best-practice">
+            <div style="flex: 1;">
+              <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 4px; flex-wrap: wrap;">
+                <span class="pass-badge">PASS</span>
+                <span class="rule-code" style="color: #15803d;">scope-attr-valid</span>
+                <span class="scan-pill">Scan 1 (Main Page)</span>
+              </div>
+              <div style="font-weight: 600; color: var(--text-heading); font-size: 0.95rem;">scope attribute should be used correctly</div>
+              <div style="font-size: 0.85rem; color: var(--text-muted);">Ensure the scope attribute is used correctly on tables</div>
+              <div class="tags-row" style="margin-top: 8px;">
+                <span class="wcag-chip">cat.tables</span><span class="wcag-chip">best-practice</span>
+              </div>
+            </div>
+
+            <a href="https://dequeuniversity.com/rules/axe/4.13/scope-attr-valid?application=playwright" target="_blank" rel="noopener" class="docs-btn">Docs &rarr;</a>
+          </div>
+        
+          <div class="pass-row" data-scans="Scan 1 (Main Page),Scan 2 (Edit Modal),Scan 3 (View Modal)" data-search="scrollable-region-focusable Scrollable region must have keyboard access Ensure elements that have scrollable content are accessible by keyboard in Safari cat.keyboard wcag2a wcag211 wcag213 TTv5 TT4.a EN-301-549 EN-9.2.1.1 EN-9.2.1.3 RGAAv4 RGAA-7.3.2">
+            <div style="flex: 1;">
+              <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 4px; flex-wrap: wrap;">
+                <span class="pass-badge">PASS</span>
+                <span class="rule-code" style="color: #15803d;">scrollable-region-focusable</span>
+                <span class="scan-pill">Scan 1 (Main Page)</span><span class="scan-pill">Scan 2 (Edit Modal)</span><span class="scan-pill">Scan 3 (View Modal)</span>
+              </div>
+              <div style="font-weight: 600; color: var(--text-heading); font-size: 0.95rem;">Scrollable region must have keyboard access</div>
+              <div style="font-size: 0.85rem; color: var(--text-muted);">Ensure elements that have scrollable content are accessible by keyboard in Safari</div>
+              <div class="tags-row" style="margin-top: 8px;">
+                <span class="wcag-chip">cat.keyboard</span><span class="wcag-chip">wcag2a</span><span class="wcag-chip">wcag211</span><span class="wcag-chip">wcag213</span><span class="wcag-chip">TTv5</span><span class="wcag-chip">TT4.a</span><span class="wcag-chip">EN-301-549</span><span class="wcag-chip">EN-9.2.1.1</span><span class="wcag-chip">EN-9.2.1.3</span><span class="wcag-chip">RGAAv4</span><span class="wcag-chip">RGAA-7.3.2</span>
+              </div>
+            </div>
+
+            <a href="https://dequeuniversity.com/rules/axe/4.13/scrollable-region-focusable?application=playwright" target="_blank" rel="noopener" class="docs-btn">Docs &rarr;</a>
+          </div>
+        
+          <div class="pass-row" data-scans="Scan 1 (Main Page)" data-search="skip-link The skip-link target should exist and be focusable Ensure all skip links have a focusable target cat.keyboard best-practice RGAAv4 RGAA-12.7.1">
+            <div style="flex: 1;">
+              <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 4px; flex-wrap: wrap;">
+                <span class="pass-badge">PASS</span>
+                <span class="rule-code" style="color: #15803d;">skip-link</span>
+                <span class="scan-pill">Scan 1 (Main Page)</span>
+              </div>
+              <div style="font-weight: 600; color: var(--text-heading); font-size: 0.95rem;">The skip-link target should exist and be focusable</div>
+              <div style="font-size: 0.85rem; color: var(--text-muted);">Ensure all skip links have a focusable target</div>
+              <div class="tags-row" style="margin-top: 8px;">
+                <span class="wcag-chip">cat.keyboard</span><span class="wcag-chip">best-practice</span><span class="wcag-chip">RGAAv4</span><span class="wcag-chip">RGAA-12.7.1</span>
+              </div>
+            </div>
+
+            <a href="https://dequeuniversity.com/rules/axe/4.13/skip-link?application=playwright" target="_blank" rel="noopener" class="docs-btn">Docs &rarr;</a>
+          </div>
+        
+          <div class="pass-row" data-scans="Scan 1 (Main Page),Scan 2 (Edit Modal),Scan 3 (View Modal)" data-search="tabindex Elements should not have tabindex greater than zero Ensure tabindex attribute values are not greater than 0 cat.keyboard best-practice">
+            <div style="flex: 1;">
+              <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 4px; flex-wrap: wrap;">
+                <span class="pass-badge">PASS</span>
+                <span class="rule-code" style="color: #15803d;">tabindex</span>
+                <span class="scan-pill">Scan 1 (Main Page)</span><span class="scan-pill">Scan 2 (Edit Modal)</span><span class="scan-pill">Scan 3 (View Modal)</span>
+              </div>
+              <div style="font-weight: 600; color: var(--text-heading); font-size: 0.95rem;">Elements should not have tabindex greater than zero</div>
+              <div style="font-size: 0.85rem; color: var(--text-muted);">Ensure tabindex attribute values are not greater than 0</div>
+              <div class="tags-row" style="margin-top: 8px;">
+                <span class="wcag-chip">cat.keyboard</span><span class="wcag-chip">best-practice</span>
+              </div>
+            </div>
+
+            <a href="https://dequeuniversity.com/rules/axe/4.13/tabindex?application=playwright" target="_blank" rel="noopener" class="docs-btn">Docs &rarr;</a>
+          </div>
+        
+          <div class="pass-row" data-scans="Scan 1 (Main Page)" data-search="table-duplicate-name Tables should not have the same summary and caption Ensure the <caption> element does not contain the same text as the summary attribute cat.tables best-practice RGAAv4 RGAA-5.2.1">
+            <div style="flex: 1;">
+              <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 4px; flex-wrap: wrap;">
+                <span class="pass-badge">PASS</span>
+                <span class="rule-code" style="color: #15803d;">table-duplicate-name</span>
+                <span class="scan-pill">Scan 1 (Main Page)</span>
+              </div>
+              <div style="font-weight: 600; color: var(--text-heading); font-size: 0.95rem;">Tables should not have the same summary and caption</div>
+              <div style="font-size: 0.85rem; color: var(--text-muted);">Ensure the <caption> element does not contain the same text as the summary attribute</div>
+              <div class="tags-row" style="margin-top: 8px;">
+                <span class="wcag-chip">cat.tables</span><span class="wcag-chip">best-practice</span><span class="wcag-chip">RGAAv4</span><span class="wcag-chip">RGAA-5.2.1</span>
+              </div>
+            </div>
+
+            <a href="https://dequeuniversity.com/rules/axe/4.13/table-duplicate-name?application=playwright" target="_blank" rel="noopener" class="docs-btn">Docs &rarr;</a>
+          </div>
+        
+          <div class="pass-row" data-scans="Scan 1 (Main Page)" data-search="td-headers-attr Table cell headers attributes must refer to other <th> elements in the same table Ensure that each cell in a table that uses the headers attribute refers only to other <th> elements in that table cat.tables wcag2a wcag131 section508 section508.22.g TTv5 TT14.b EN-301-549 EN-9.1.3.1 RGAAv4 RGAA-5.7.4">
+            <div style="flex: 1;">
+              <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 4px; flex-wrap: wrap;">
+                <span class="pass-badge">PASS</span>
+                <span class="rule-code" style="color: #15803d;">td-headers-attr</span>
+                <span class="scan-pill">Scan 1 (Main Page)</span>
+              </div>
+              <div style="font-weight: 600; color: var(--text-heading); font-size: 0.95rem;">Table cell headers attributes must refer to other <th> elements in the same table</div>
+              <div style="font-size: 0.85rem; color: var(--text-muted);">Ensure that each cell in a table that uses the headers attribute refers only to other <th> elements in that table</div>
+              <div class="tags-row" style="margin-top: 8px;">
+                <span class="wcag-chip">cat.tables</span><span class="wcag-chip">wcag2a</span><span class="wcag-chip">wcag131</span><span class="wcag-chip">section508</span><span class="wcag-chip">section508.22.g</span><span class="wcag-chip">TTv5</span><span class="wcag-chip">TT14.b</span><span class="wcag-chip">EN-301-549</span><span class="wcag-chip">EN-9.1.3.1</span><span class="wcag-chip">RGAAv4</span><span class="wcag-chip">RGAA-5.7.4</span>
+              </div>
+            </div>
+
+            <a href="https://dequeuniversity.com/rules/axe/4.13/td-headers-attr?application=playwright" target="_blank" rel="noopener" class="docs-btn">Docs &rarr;</a>
+          </div>
+        
+          <div class="pass-row" data-scans="Scan 1 (Main Page)" data-search="th-has-data-cells Table headers in a data table must refer to data cells Ensure that <th> elements and elements with role=columnheader/rowheader have data cells they describe cat.tables wcag2a wcag131 section508 section508.22.g TTv5 TT14.b EN-301-549 EN-9.1.3.1 RGAAv4 RGAA-5.7.1">
+            <div style="flex: 1;">
+              <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 4px; flex-wrap: wrap;">
+                <span class="pass-badge">PASS</span>
+                <span class="rule-code" style="color: #15803d;">th-has-data-cells</span>
+                <span class="scan-pill">Scan 1 (Main Page)</span>
+              </div>
+              <div style="font-weight: 600; color: var(--text-heading); font-size: 0.95rem;">Table headers in a data table must refer to data cells</div>
+              <div style="font-size: 0.85rem; color: var(--text-muted);">Ensure that <th> elements and elements with role=columnheader/rowheader have data cells they describe</div>
+              <div class="tags-row" style="margin-top: 8px;">
+                <span class="wcag-chip">cat.tables</span><span class="wcag-chip">wcag2a</span><span class="wcag-chip">wcag131</span><span class="wcag-chip">section508</span><span class="wcag-chip">section508.22.g</span><span class="wcag-chip">TTv5</span><span class="wcag-chip">TT14.b</span><span class="wcag-chip">EN-301-549</span><span class="wcag-chip">EN-9.1.3.1</span><span class="wcag-chip">RGAAv4</span><span class="wcag-chip">RGAA-5.7.1</span>
+              </div>
+            </div>
+
+            <a href="https://dequeuniversity.com/rules/axe/4.13/th-has-data-cells?application=playwright" target="_blank" rel="noopener" class="docs-btn">Docs &rarr;</a>
+          </div>
+        
+          <div class="pass-row" data-scans="Scan 2 (Edit Modal),Scan 3 (View Modal)" data-search="form-field-multiple-labels Form field must not have multiple label elements Ensure form field does not have multiple label elements cat.forms wcag2a wcag332 TTv5 TT5.c EN-301-549 EN-9.3.3.2 RGAAv4 RGAA-11.2.1">
+            <div style="flex: 1;">
+              <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 4px; flex-wrap: wrap;">
+                <span class="pass-badge">PASS</span>
+                <span class="rule-code" style="color: #15803d;">form-field-multiple-labels</span>
+                <span class="scan-pill">Scan 2 (Edit Modal)</span><span class="scan-pill">Scan 3 (View Modal)</span>
+              </div>
+              <div style="font-weight: 600; color: var(--text-heading); font-size: 0.95rem;">Form field must not have multiple label elements</div>
+              <div style="font-size: 0.85rem; color: var(--text-muted);">Ensure form field does not have multiple label elements</div>
+              <div class="tags-row" style="margin-top: 8px;">
+                <span class="wcag-chip">cat.forms</span><span class="wcag-chip">wcag2a</span><span class="wcag-chip">wcag332</span><span class="wcag-chip">TTv5</span><span class="wcag-chip">TT5.c</span><span class="wcag-chip">EN-301-549</span><span class="wcag-chip">EN-9.3.3.2</span><span class="wcag-chip">RGAAv4</span><span class="wcag-chip">RGAA-11.2.1</span>
+              </div>
+            </div>
+
+            <a href="https://dequeuniversity.com/rules/axe/4.13/form-field-multiple-labels?application=playwright" target="_blank" rel="noopener" class="docs-btn">Docs &rarr;</a>
+          </div>
+        
+          <div class="pass-row" data-scans="Scan 2 (Edit Modal),Scan 3 (View Modal)" data-search="label-title-only Form elements should have a visible label Ensure that every form element has a visible label and is not solely labeled using hidden labels, or the title or aria-describedby attributes cat.forms best-practice">
+            <div style="flex: 1;">
+              <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 4px; flex-wrap: wrap;">
+                <span class="pass-badge">PASS</span>
+                <span class="rule-code" style="color: #15803d;">label-title-only</span>
+                <span class="scan-pill">Scan 2 (Edit Modal)</span><span class="scan-pill">Scan 3 (View Modal)</span>
+              </div>
+              <div style="font-weight: 600; color: var(--text-heading); font-size: 0.95rem;">Form elements should have a visible label</div>
+              <div style="font-size: 0.85rem; color: var(--text-muted);">Ensure that every form element has a visible label and is not solely labeled using hidden labels, or the title or aria-describedby attributes</div>
+              <div class="tags-row" style="margin-top: 8px;">
+                <span class="wcag-chip">cat.forms</span><span class="wcag-chip">best-practice</span>
+              </div>
+            </div>
+
+            <a href="https://dequeuniversity.com/rules/axe/4.13/label-title-only?application=playwright" target="_blank" rel="noopener" class="docs-btn">Docs &rarr;</a>
+          </div>
+        
+          <div class="pass-row" data-scans="Scan 2 (Edit Modal),Scan 3 (View Modal)" data-search="label Form elements must have labels Ensure every form element has a label cat.forms wcag2a wcag412 section508 section508.22.n TTv5 TT5.c EN-301-549 EN-9.4.1.2 ACT RGAAv4 RGAA-11.1.1">
+            <div style="flex: 1;">
+              <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 4px; flex-wrap: wrap;">
+                <span class="pass-badge">PASS</span>
+                <span class="rule-code" style="color: #15803d;">label</span>
+                <span class="scan-pill">Scan 2 (Edit Modal)</span><span class="scan-pill">Scan 3 (View Modal)</span>
+              </div>
+              <div style="font-weight: 600; color: var(--text-heading); font-size: 0.95rem;">Form elements must have labels</div>
+              <div style="font-size: 0.85rem; color: var(--text-muted);">Ensure every form element has a label</div>
+              <div class="tags-row" style="margin-top: 8px;">
+                <span class="wcag-chip">cat.forms</span><span class="wcag-chip">wcag2a</span><span class="wcag-chip">wcag412</span><span class="wcag-chip">section508</span><span class="wcag-chip">section508.22.n</span><span class="wcag-chip">TTv5</span><span class="wcag-chip">TT5.c</span><span class="wcag-chip">EN-301-549</span><span class="wcag-chip">EN-9.4.1.2</span><span class="wcag-chip">ACT</span><span class="wcag-chip">RGAAv4</span><span class="wcag-chip">RGAA-11.1.1</span>
+              </div>
+            </div>
+
+            <a href="https://dequeuniversity.com/rules/axe/4.13/label?application=playwright" target="_blank" rel="noopener" class="docs-btn">Docs &rarr;</a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+
+  <!-- Lightbox Modal for Screenshots -->
+  <div id="lightboxModal" class="lightbox-modal" onclick="closeLightbox()">
+    <div class="lightbox-content" onclick="event.stopPropagation()">
+      <button class="lightbox-close" onclick="closeLightbox()">&times;</button>
+      <img id="lightboxImg" src="" alt="Violation Full Snapshot" class="lightbox-img" />
+    </div>
+  </div>
+
+  <script>
+    function openLightbox(src) {
+      const modal = document.getElementById('lightboxModal');
+      const img = document.getElementById('lightboxImg');
+      img.src = src;
+      modal.classList.add('active');
+    }
+
+    function closeLightbox() {
+      const modal = document.getElementById('lightboxModal');
+      modal.classList.remove('active');
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeLightbox();
+    });
+
+    function toggleCard(topBar) {
+      topBar.closest('.violation-card').classList.toggle('open');
+    }
+
+    let activeFilter = 'all';
+    let searchQuery = '';
+    let selectedScan = 'all';
+
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    const searchInput = document.getElementById('searchInput');
+    const scanSelect = document.getElementById('scanSelect');
+
+    const violationsSection = document.getElementById('violationsSection');
+    const passesSection = document.getElementById('passesSection');
+
+    tabBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        tabBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        activeFilter = btn.dataset.filter;
+        applyFilters();
+      });
+    });
+
+    searchInput.addEventListener('input', (e) => {
+      searchQuery = e.target.value.toLowerCase().trim();
+      applyFilters();
+    });
+
+    scanSelect.addEventListener('change', (e) => {
+      selectedScan = e.target.value;
+      applyFilters();
+    });
+
+    function applyFilters() {
+      if (activeFilter === 'passes') {
+        violationsSection.style.display = 'none';
+        passesSection.style.display = 'block';
+      } else if (['violations', 'critical', 'serious', 'moderate', 'minor'].includes(activeFilter)) {
+        violationsSection.style.display = 'block';
+        passesSection.style.display = 'none';
+      } else {
+        violationsSection.style.display = 'block';
+        passesSection.style.display = 'block';
+      }
+
+      document.querySelectorAll('.violation-card').forEach(card => {
+        const impact = card.dataset.impact;
+        const scans = (card.dataset.scans || '').split(',');
+        const searchText = (card.dataset.search || '').toLowerCase();
+
+        let matchesFilter = true;
+        if (activeFilter === 'passes') matchesFilter = false;
+        else if (activeFilter !== 'all' && activeFilter !== 'violations') {
+          matchesFilter = (impact === activeFilter);
+        }
+
+        let matchesScan = (selectedScan === 'all') || scans.includes(selectedScan);
+        let matchesSearch = !searchQuery || searchText.includes(searchQuery);
+
+        if (matchesFilter && matchesScan && matchesSearch) {
+          card.classList.remove('hidden');
+        } else {
+          card.classList.add('hidden');
+        }
+      });
+
+      document.querySelectorAll('.pass-row').forEach(card => {
+        const scans = (card.dataset.scans || '').split(',');
+        const searchText = (card.dataset.search || '').toLowerCase();
+
+        let matchesFilter = (activeFilter === 'all' || activeFilter === 'passes');
+        let matchesScan = (selectedScan === 'all') || scans.includes(selectedScan);
+        let matchesSearch = !searchQuery || searchText.includes(searchQuery);
+
+        if (matchesFilter && matchesScan && matchesSearch) {
+          card.classList.remove('hidden');
+        } else {
+          card.classList.add('hidden');
+        }
+      });
+    }
+  </script>
+</body>
+</html>
